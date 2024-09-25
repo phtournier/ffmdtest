@@ -57,7 +57,11 @@ UhBem<complex> ubem,v2;
 
 ## Simple Layer FEM-BEM coupling (Bielack-MacCamy) - Ansatz_SL file
 
-\begin{equation}
+$$
+\delta
+$$
+
+$$
 \begin{cases}
 \begin{aligned}
 \displaystyle a_{\mathrm{int}}(u,v)  % Volume term         
@@ -68,7 +72,7 @@ UhBem<complex> ubem,v2;
 &=& \int_{\Gamma} \gamma_D^{\mathrm{ext}}(u_0) \psi
 \end{aligned}
 \end{cases}
-\end{equation}
+$$
 
 ~~~freefem
 varf vfFemBemAnsatzSL(<[ufem],[ubem]>, <[v1],[v2]>) =
