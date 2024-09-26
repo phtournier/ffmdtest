@@ -115,10 +115,10 @@ $$
 \begin{cases}
 \begin{aligned}
 \displaystyle a_{\mathrm{int}}(u,v)  % Volume term        
-+ \int_{\Gamma} W_k\ \phi\ \gamma_D^{\mathrm{int}}(v)  % Top right block
++\int_{\Gamma} W_k\ \phi\ \gamma_D^{\mathrm{int}}(v)  % Top right block
 &=& \int_{\Omega^{\mathrm{int}}} f\ v - \int_{\Gamma} \gamma_N^{\mathrm{ext}}(u_0) \gamma_D^{\mathrm{int}}(v) \\
 \displaystyle \int_{\Gamma} \gamma_D^{\mathrm{int}}(u) \psi  % bottom left term
-- \int_\Gamma \left(\frac{1}{2} I_d + K_k\right) \phi \ \psi  % bottom right term 
+-\int_\Gamma \left(\frac{1}{2} I_d + K_k\right) \phi \ \psi  % bottom right term 
 &=& \int_{\Gamma} \gamma_D^{\mathrm{ext}}(u_0) \psi
 \end{aligned}
 \end{cases}
