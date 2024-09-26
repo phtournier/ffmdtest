@@ -61,16 +61,16 @@ $$
 \delta
 $$
 
-$$\begin{cases}
+$$
+\begin{cases}
 \begin{aligned}
 \displaystyle a_{\mathrm{int}}(u,v)  % Volume term         
-+ \int_{\Gamma} \left(\frac{1}{2} I_d+ K_k^{\prime}\right) \phi\ \gamma_D^{\mathrm{int}}(v)  % Top right block
-&=& \int_{\Omega^{\mathrm{int}}} f\ v - \int_{\Gamma} \gamma_N^{\mathrm{ext}}(u_0) \gamma_D^{\mathrm{int}}(v) \\
++\int_{\Gamma} \left(\frac{1}{2} I_d+ K_k^{\prime}\right) \phi\ \gamma_D^{\mathrm{int}}(v)  % Top right block &=& \int_{\Omega^{\mathrm{int}}} f\ v - \int_{\Gamma} \gamma_N^{\mathrm{ext}}(u_0) \gamma_D^{\mathrm{int}}(v) \\
 \displaystyle \int_{\Gamma} \gamma_D^{\mathrm{int}}(u) \psi  % bottom left term
--  \int_\Gamma V_k (\phi) \ \psi  % bottom right term
-&=& \int_{\Gamma} \gamma_D^{\mathrm{ext}}(u_0) \psi
+-\int_\Gamma V_k (\phi) \ \psi  % bottom right term &=& \int_{\Gamma} \gamma_D^{\mathrm{ext}}(u_0) \psi
 \end{aligned}
-\end{cases}$$
+\end{cases}
+$$
 
 ~~~freefem
 varf vfFemBemAnsatzSL(<[ufem],[ubem]>, <[v1],[v2]>) =
