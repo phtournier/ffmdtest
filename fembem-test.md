@@ -302,7 +302,7 @@ plot(ufemAbs,uextAbs,fill=1,value=1);
 ## Direct Combined - Direct_Combined file
 $\varphi \coloneqq \gamma_N^{\mathrm{ext}}(u)$
 
-\begin{equation}
+\[
 \begin{cases}
 \begin{aligned}
 \displaystyle a_{\mathrm{int}}(u,v)  % Volume term         
@@ -313,7 +313,7 @@ $\varphi \coloneqq \gamma_N^{\mathrm{ext}}(u)$
 &=& \int_{\Gamma} \left[W_k - i  \left(\frac{1}{2} I_d - K_k\right) Z \right] \gamma_D^{\mathrm{ext}}(u_0) \psi
 \end{aligned}
 \end{cases}
-\end{equation}
+\]
 
 ~~~freefem
 eta = k0;
