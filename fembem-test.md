@@ -61,8 +61,7 @@ $$
 \delta
 $$
 
-$$
-\begin{cases}
+$$\begin{cases}
 \begin{aligned}
 \displaystyle a_{\mathrm{int}}(u,v)  % Volume term         
 + \int_{\Gamma} \left(\frac{1}{2} I_d+ K_k^{\prime}\right) \phi\ \gamma_D^{\mathrm{int}}(v)  % Top right block
@@ -71,8 +70,7 @@ $$
 -  \int_\Gamma V_k (\phi) \ \psi  % bottom right term
 &=& \int_{\Gamma} \gamma_D^{\mathrm{ext}}(u_0) \psi
 \end{aligned}
-\end{cases}
-$$
+\end{cases}$$
 
 ~~~freefem
 varf vfFemBemAnsatzSL(<[ufem],[ubem]>, <[v1],[v2]>) =
@@ -113,7 +111,7 @@ plot(ufemAbs,uextAbs,fill=1,value=1);
 
 ## Double Layer FEM-BEM coupling - Ansatz_DL file
 
-\begin{equation}
+$$
 \begin{cases}
 \begin{aligned}
 \displaystyle a_{\mathrm{int}}(u,v)  % Volume term        
@@ -124,7 +122,7 @@ plot(ufemAbs,uextAbs,fill=1,value=1);
 &=& \int_{\Gamma} \gamma_D^{\mathrm{ext}}(u_0) \psi
 \end{aligned}
 \end{cases}
-\end{equation}
+$$
 
 ~~~freefem
 varf vfFemBemAnsatzDL(<[ufem],[phi]>,<[v1],[v2]>) =
