@@ -109,5 +109,10 @@ the following
     }
 
 ## Results
-![The price of the Put](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/BlackScholes2D/solution.png)
-![Mesh adapted to the solution](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/BlackScholes2D/adaptedmesh.png)
+| The price of the Put                                                                                              |
+| ----------------------------------------------------------------------------------------------------------------- |
+| ![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/BlackScholes2D/solution.png) |
+
+| Mesh adapted to the solution                                                                                         |
+| -------------------------------------------------------------------------------------------------------------------- |
+| ![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/BlackScholes2D/adaptedmesh.png) |
