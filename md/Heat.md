@@ -93,4 +93,4 @@ varf vL(u, v) = on(2, 4, u=30);
 plot(u, cmm="u2");
 cout << " cpu method 1 = " << cpu1 << " cpu method matrix = " << cpu2 << " ratio = " <<  cpu1/cpu2 << endl;
 ~~~
-![](solution.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/Heat/solution.png)

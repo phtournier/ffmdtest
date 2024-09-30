@@ -51,7 +51,7 @@ A;
 plot(u, wait=1);
 ~~~
 The test will also be our target
-![](test.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/optimcontrol/test.png)
 BFGS requires $J$ and $J'_z$ to be defined as C-functions
 ~~~c++
 ud = u;
@@ -101,4 +101,4 @@ for(int j = 0; j < z.n; j++) cout << z[j] << endl;
 plot(ud, value=1, ps="u.ps");
 ~~~
 The solution
-![](solution.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/optimcontrol/solution.png)

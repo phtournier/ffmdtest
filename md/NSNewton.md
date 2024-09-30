@@ -28,7 +28,7 @@ mesh Th = buildmesh(cc(-40) + ce(20) + beb(15) + beu(15) + beo(8) + bei(10));
 plot(Th);
 ~~~~
 The mesh
-![](mesh.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/NSNewton/mesh.png)
 To resolve the nonlinearity we use a linearization
 $$
 \begin{align*}
@@ -122,4 +122,4 @@ while(1) {
 cout << " CPU "<< clock()<< " s " << endl;
 ~~~
 The solution
-![](solution.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/NSNewton/solution.png)

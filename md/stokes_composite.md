@@ -61,4 +61,4 @@ plot( p,  cmm="p" );
 ~~~
 ## Results
 isovalue lines of the pressure.
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/stokes_composite_solution.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/stokes_composite/solution.png)

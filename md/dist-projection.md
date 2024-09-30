@@ -25,7 +25,7 @@ Vh Uy = projection(Lh).y-y;
 plot(d, [Ux,Uy],Lh, wait=1);
 ~~~~
 The plot displays the level curves of $d$ in 3D and $U$.
-![](Ud.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/dist-projection/Ud.png)
 Now the same is done with another triangulation of a square, Th2. Parameters nu containes the triangle number of the projection and ph the projection point. So Th2[nu][0] is the first vertex of triangle nu.
 ~~~c++
 int nu;
@@ -44,7 +44,7 @@ x=0;y=0;z=0;
 plot([Ux,Uy],Th2, wait=1);
 ~~~
 The function d to Th2
-![](plot2.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/dist-projection/plot2.png)
 Finally some more advanced operations are done in 3D: signeddist(ThS) is the distance from points in the cube to the square ThS.
 ~~~c++
 load "msh3";
@@ -56,4 +56,4 @@ Uh d3=signeddist(ThS);
 plot(d3,wait=1);
 ~~~
 The signeddist function
-![](plot3.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/dist-projection/plot3.png)

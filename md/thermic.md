@@ -48,4 +48,4 @@ plot(vold);
 ~~~
 ## The temperature
 
-![](solution.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/thermic/solution.png)

@@ -60,7 +60,7 @@ v = eV[0];
 plot(v, wait=1, ps="eigen.eps");
 ~~~
 Sound pressure lines
-![](pressure.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/sound/pressure.png)
 
 One eigen mode
-![](eigen0.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/sound/eigen0.png)

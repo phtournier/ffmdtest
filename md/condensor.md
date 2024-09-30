@@ -33,7 +33,7 @@ mesh Th=buildmesh(C0(50)
     +C21(5)+C22(20)+C23(5)+C24(-20));
 plot(Th, wait=true);
 ~~~~
-![](mesh.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/condensor/mesh.png)
 The electrosptatic potential equation in absence of volumic chaarges is
 $$
 \Delta u =1,\quad u|_{C_1}=-1,\quad u|_{C_2}=0,\quad u|_{C_3}=1,
@@ -60,4 +60,4 @@ Notice that the solution is stored in a file condensor.eps in postscript format 
     ps2eps condersor.ps
     epstopdf condensor.eps
 
-![](solution.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/condensor/solution.png)

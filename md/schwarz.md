@@ -49,6 +49,6 @@ for (int i = 0; i < 4; i++) {
 plot(U, u, wait=1, cmm="Final solution");
 ~~~~
 The solution at iteration 1
-![](solone.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/schwarz/solone.png)
 The solution at iteration 4
-![](sol1four.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/schwarz/sol1four.png)

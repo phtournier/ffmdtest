@@ -47,4 +47,4 @@ plot([u,v],p,wait=1);
 ~~~
 ## Results
 isovalue lines of the pressure and vector display of the velocity.
-![](solution.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/stokes/solution.png)

@@ -49,4 +49,4 @@ solve a(u, v)
 plot(u, value=true, wait=1, fill=true);
 ~~~
 The solution:
-![](solution.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/heatex/solution.png)

@@ -32,7 +32,7 @@ Vh u, v;
 Vh kappa = 1 + 4*(x<-1)*(x>-2)*(y<3)*(y>-3);
 ~~~
 ## The Mesh
-![](mesh.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/thermal/mesh.png)
 The heat equation is
 $$
 -\nabla\cdot(\kappa\nabla u)=0,~~u|_{C_0}=20,~~u|_{C_1}=100.
@@ -45,4 +45,4 @@ solve a(u, v)
 plot(u, value=true, wait=1, fill=true);
 ~~~
 ## The temperature
-![](solution.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/thermal/solution.png)

@@ -27,7 +27,7 @@ mesh Th = buildmesh(a0(10*n) + a1(10*n) + a2(10*n) + a3(10*n) + a4(10*n) + a5(10
   + b0(5*n) + b1(10*n) + b2(5*n) + b3(10*n));
 ~~~
 The geometry
-![](geometry.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/geometry.png)
 The wave is solution of a PDE in the complex domain for which the variational formulation is
 $$
 \begin{align*}
@@ -64,8 +64,8 @@ plot(vr, wait=1, ps="rmuonde.ps", fill=true);
 plot(vi, wait=1, ps="imuonde.ps", fill=true);
 ~~~~
 Notice that the linear system is complex and could be singular (resonnance). 
-![](realpart.png)
-![](imaginepart.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/realpart.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/imaginepart.png)
 To compute the temperature in the meat we solve
 $$
 \begin{align*}
@@ -92,4 +92,4 @@ solve temperature(u, uu)
 plot(u, wait=1, ps="tempmuonde.ps", fill=true);
 ~~~
 The temperature
-![](heat.png)
+![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/heat.png)
