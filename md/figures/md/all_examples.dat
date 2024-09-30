@@ -1,0 +1,1598 @@
+name: potential
+category:fluid mechanics
+layout: example
+---
+## Potential flow around an airfol with thermal effects.
+
+Potential flow is
+$$
+\nabla\times\vec u=0,~~\nabla\cdot \vec u=0~~,i.e.~~\vec u=\nabla\times\psi,~~\Delta\psi=0.
+$$
+The flow is tangent to the airfoil, so $~~\vec u\cdot n=0,~i.e.~~\psi=a$ constant.
+At infinity the flow is given: $\phi=y\cos\alpha-x\sin\alpha$ where $\alpha$ is the angle of incidence.  
+The airfoil is a NACA0012 given as a function $x\to \pm y(x)$.
+~~~c++
+real S = 99;
+
+border C(t=0, 2*pi){x=3*cos(t); y=3*sin(t);} // Label 1,2 
+border Splus(t=0, 1){x=t-0.5; y=0.17735*sqrt(t) - 0.075597*t - 0.212836*(t^2) + 0.17363*(t^3) - 0.06254*(t^4); label=S;}
+border Sminus(t=1, 0){x=t-0.5; y=-(0.17735*sqrt(t) - 0.075597*t - 0.212836*(t^2) + 0.17363*(t^3) - 0.06254*(t^4)); label=S;}
+mesh Th = buildmesh(C(50) + Splus(70) + Sminus(70));
+// Fespace
+fespace Vh(Th, P2);
+~~~
+Joukowski tells us that the pressure $p=-\frac12|\vec u|^2$ is continuous at the trailing edege P. As $\vec u\cdot\vec n|_P=0$, it implies that the tangent velocity is continuous: the jump from the lower side to the upper side at P is zero: $[\vec u\cdot\vec s]|_P=0$.  The trick is to define 
+$$
+\begin{align*}&
+\Delta\psi^0=0,~~ \psi^0|_C=0,~~\psi^0|_\infty=y\cos\alpha-x\sin\alpha
+\cr&
+\Delta\psi^1=0,~~ \psi^1|_C=1,~~\psi^1|_\infty=0
+\end{align*}
+$$
+and search by superposition for $\psi=\psi_0+\beta\psi_1$ and adjust $\beta$ to satisfy the Joukowsky condition.
+See https://doc.freefem.org/models/static-problems.html#aerodynamics
+
+Here we assume that $\beta$ is given and we concentral on thermal effects.
+
+Let $\Omega$ be a the bounded open set of $R^2$ approximating $\infty$ by a circle and having the airfoil near the center of the circle.  Consider the variational formulations to apply the finite element method
+$$
+\int_\Omega\nabla\psi\nabla\hat\psi =0~~\forall \hat\psi\in  H^1_0(\Omega);~~\psi-\psi_\Gamma^i\in H^1_0(\Omega).
+$$
+~~~c++
+Vh psi, w;
+real cost = cos(5.*pi/180.), sint=sin(5.*pi/180.);// incidence 5 degres
+// Problem
+solve potential(psi, w)
+  = int2d(Th)(dx(psi)*dx(w)+dy(psi)*dy(w))
+  + on(C, psi = cost*y-sint*x) 
+  + on(S, psi=0);
+
+plot(psi, wait=1);
+~~~
+For the temperature equation we work with a different mesh on because the temperature varies also inside the airfoil.
+~~~c++
+border D(t=0, 2.){x=0.5+t*cost; y=+t*sint;}
+mesh Sh = buildmesh(C(25) + Splus(-90) + Sminus(-90) + D(200));
+int steel = Sh(0.5, 0).region, air = Sh(-1, 0).region;
+// Change label to put BC on In flow 
+fespace Wh(Sh, P1);
+Wh  vv;
+
+fespace W0(Sh, P0);
+W0 k = 0.01*(region == air) + 0.1*(region == steel);
+W0 u1 = dy(psi)*(region == air), u2 = -dx(psi)*(region == air);
+Wh v = 120*(region == steel), vold;
+// pul label 10 on inflow boundary to inforce the temperature.
+Sh = change(Sh,flabel = (label == C &&  [u1,u2]'*N<0) ? 10 : label);
+~~~~
+The time dependent heat equation is solved by an implicit Euler time scheme.
+$$
+\frac1{dt} v -\nabla\cdot(k\nabla v) + a(u_1\partial_x v + u_2\partial_y v) =\frac1{dt} v_{old}
+$$
+where $[u_1,u_2]^T=\nabla\times\psi$.
+~~~c++
+int i;
+real dt = 0.005, nbT = 50;
+problem thermic(v, vv, init=i, solver=LU)
+  = int2d(Sh)(
+      v*vv/dt + k*(dx(v)*dx(vv) + dy(v)*dy(vv))
+    + 10*(u1*dx(v) + u2*dy(v))*vv
+  )
+  - int2d(Sh)(vold*vv/dt)
+  + on(10, v= 0);
+  
+
+for(i = 0; i < nbT; i++) {
+    vold[]= v[];
+    thermic;
+    plot(v);
+}
+plot(v, wait=1,fill=1,value=1);
+~~~
+name: thermal
+category: thermodynamics
+layout: example
+---
+
+# The time dependent nonlinear heat equation
+
+The time dependent heat equation  with a discontinuous thermal diffusion and nonlinear dissipation is integrated in a rectangle:
+~~~c++
+mesh Th = square(30, 5, [6*x, y]);
+~~~
+$$
+\partial_t u - \nabla\cdot(k\nabla u)=0, ~~u|_{\Gamma_1}=u_\Gamma,~~k\frac{\partial u}{\partial n}|_{\Gamma_2}+b(u)(u-u_e)=0,~~u_{t=0}=u_0.
+$$
+In this example $k=1.8~{\bf 1}_{y<0.5}+0.2$ where ${\bf 1}_x$ is the Heaviside function.  The time varies from 0 to 5. Finally $u_e=20$.  The function $b$ corresponds to the linearization of a $T^4$ law.
+~~~c++
+func u0 = 10+90*x/6;
+func k = 1.8*(y<0.5) + 0.2;
+real ue = 25, alpha = 0.25, T = 5, dt = 0.1;
+real rad = 1e-8, uek = ue + 273.;
+
+// Fespace
+fespace Vh(Th,P1);
+Vh vold, w, v=u0-ue, b;
+
+problem thermradia(v, w)
+  = int2d(Th)(
+      v*w/dt
+    + k*(dx(v)*dx(w) + dy(v)*dy(w))
+  )
+  + int1d(Th, 1, 3)(b*v*w)
+  - int2d(Th)(vold*w/dt)
+  + on(2, 4, v=u0-ue);
+~~~
+An implicit Euler scheme is used to integrate the equation in time with time step 0.1. A loop is used for the nonlinearity.
+~~~c++
+for(real t = 0; t < T; t+=dt) {
+  vold = v;
+  for (int m = 0; m < 5; m++) {
+    b = alpha + rad*(v + 2*uek)*((v+uek)^2 + uek^2);
+    thermradia;
+  }
+}
+vold = v + ue;
+
+// Plot
+plot(vold);
+~~~
+## The temperature
+
+![](solution.png)
+name: NSprojection
+category: Fluid Mechanics
+layout: example
+---
+
+## Time dependent imcompressible Navier Stokes Equation solved with Newton's method 
+
+The navier-Stokes equations are solved for a flow over a backward facing step.
+The time independent Navier-Stokes equations for an incompressible fluid are
+$$
+\frac{\partial u}{\partial t}-\nu\Delta u +u\cdot\nabla u -\nabla p =0,~~~\nabla\cdot u=0~~~in ~ \Omega
+$$
+
+The velocity is specified on the left vertical side of the pipe (inlet) and free on the vertical side on the right (outlet). There is a noslip condition on the lateral walls.
+The geometry is as follows. Note the trick $t^{1.2}$ to refine the mesh near the corner of the step.
+~~~c++
+verbosity=0;
+int n = 1;
+
+// Mesh
+border a0(t=1, 0){x=-2; y=t; label=1;} // inlet
+border a1(t=-2, 0){x=t; y=0; label=2;}
+border a2(t=0, -0.5){x=0; y=t; label=2;}
+border a3(t=0, 1){x=18*t^1.2; y=-0.5; label=2;}
+border a4(t=-0.5, 1){x=18; y=t; label=3;} // outlet
+border a5(t=1, 0){x=-2+20*t; y=1; label=4;}
+
+mesh Th = buildmesh(a0(3*n) + a1(20*n) + a2(10*n) + a3(150*n) + a4(5*n) + a5(100*n));
+plot(Th);
+
+// Fespace
+fespace Vh(Th, P1);
+Vh w, u = 0, v = 0, p = 0, q = 0;
+
+real nu = 0.0025; // Reynolds=200
+real dt = 0.2;
+real epsv = 1e-6, epsu = 1e-6, epsp = 1e-6;
+~~~
+The mesh
+![](mesh.png)
+The matrices dtMx and dtMy are used to project $[u,v]^T$ on the space of divergence free functions
+~~~c++
+matrix dtM1x, dtM1y;
+
+macro  BuildMat()
+  { /* for memory managenemt */
+    varf vM(unused, v) = int2d(Th)(v) ;
+    varf vdx(u, v) = int2d(Th)(v*dx(u)*dt) ;
+    varf vdy(u, v) = int2d(Th)(v*dy(u)*dt) ;
+
+    real[int] Mlump = vM(0, Vh);
+    real[int] one(Vh.ndof); one = 1;
+    real[int] M1 = one ./ Mlump;
+    matrix dM1 = M1;
+    matrix Mdx = vdx(Vh, Vh);
+    matrix Mdy = vdy(Vh, Vh);
+    dtM1x = dM1*Mdx;
+    dtM1y = dM1*Mdy;
+  }// end of macro
+BuildMat
+~~~
+In the follwing time loop, ${\bf u}=[u,v]^T$ are computed at every time steps by using the method of characteristics implemented in the operator $\texttt{convect}$:
+$$
+\partial_t{\bf u}+{\bf u}\cdot\nabla{\bf u}|_{x,t}\approx \frac1{\delta t}[{\bf u}(x,t)-{\bf u}(x-{\bf u}(x,t-\delta t)\delta t,t-\delta t)]
+$$
+~~~c++
+real err = 1, outflux = 1;
+for(int n = 0; n < 200; n++) {
+  Vh uold = u, vold = v, pold = p;
+
+  solve pb4u(u, w, init=n, solver=CG, eps=epsu)
+    = int2d(Th)(
+      u*w/dt + nu*(dx(u)*dx(w) + dy(u)*dy(w))
+    )
+    - int2d(Th)(
+      (convect([uold, vold], -dt, uold)/dt - dx(p))*w
+    )
+    + on(1, u=4*y*(1-y))
+    + on(2, 4, u=0);
+  plot(u);
+
+  solve pb4v(v, w, init=n, solver=CG, eps=epsv)
+    = int2d(Th)(
+      v*w/dt + nu*(dx(v)*dx(w) + dy(v)*dy(w))
+    )
+    - int2d(Th)(
+      (convect([uold, vold], -dt, vold)/dt - dy(p))*w
+    )
+    + on(1, 2, 3, 4, v=0);
+
+  solve pb4p(q, w, solver=CG, init=n, eps=epsp)
+    = int2d(Th)(dx(q)*dx(w) + dy(q)*dy(w))
+    - int2d(Th)((dx(u) + dy(v))*w/dt)
+    + on(3, q=0);
+
+  // to have absolute epsilon in CG algorithm.
+  epsv = -abs(epsv);
+  epsu = -abs(epsu);
+  epsp = -abs(epsp);
+~~~
+And then ${\bf u}$ is projected with $q$ by $M$ , i.e. ${\bf u}+M(\nabla q)\delta t$ is divergence free.
+~~~c++
+p = pold-q;
+u[] += dtM1x*q[];
+v[] += dtM1y*q[];
+~~~
+For better precosion the mesh is adapted to the flow
+~~~c++
+if(n%50 == 49) {
+    Th = adaptmesh(Th, [u, v], q, err=0.06, nbvx=100000);
+    plot(Th, wait=true);
+    BuildMat // rebuild mat.
+}
+~~~~
+The stopping criteria to exit the loop:
+~~~c++
+err = sqrt(int2d(Th)(square(u - uold) + square(v - vold))/Th.area);
+  outflux = int1d(Th)([u, v]'*[N.x, N.y]) ;
+  cout << " iter " << n << " Err L2 = " << err << " - Outflow = " << outflux << endl;
+  if (err < 1e-3) break;
+}
+assert(abs(outflux) < 5e-3); // verification
+plot(p, wait=1, ps="NSprojP.ps");
+plot(u, wait=1, ps="NSprojU.ps");
+~~~
+The u-component of the velocity and 
+![](u.png)
+the pressure
+![](p.png)
+name: dist-projection
+category: Tools
+layout: example
+---
+
+# Test the function "dist" 
+## and the projection on a curve built with meshL
+The function $\texttt{dis(C)}$ returns the distance from the current point to $C$. Let us build a triangulation of a curve (here a cercle)  $C$, i.e. cut the circle into 20 segments.
+~~~c++
+load "msh3"
+border C(t=0,2*pi){ x= cos(t); y=sin(t); label=1; region =1;}
+meshL Lh =buildmeshL(C(20));
+~~~~
+Let us build a finite element space of $P^1$ functions on a square centered at (0,0) of size 3$\times$3.
+~~~~c++
+mesh Th= square(20,20,[(x-0.5)*3,(y-0.5)*3]);
+fespace Vh(Th,P1);
+Vh d=dist(Lh);
+~~~~~
+The last line defines a $P^1$ function on the square which is equal to the distance to $C$ of any point in the square Th. 
+Next, $U=[U_x,U_y]^T$ is the vector which starts from $P=[x,y]^T$ and ends at the projection of $P$ on $C$.
+~~~c++
+Vh Ux = projection(Lh).x-x;
+Vh Uy = projection(Lh).y-y; 
+plot(d, [Ux,Uy],Lh, wait=1);
+~~~~
+The plot displays the level curves of $d$ in 3D and $U$.
+![](Ud.png)
+Now the same is done with another triangulation of a square, Th2. Parameters nu containes the triangle number of the projection and ph the projection point. So Th2[nu][0] is the first vertex of triangle nu.
+~~~c++
+int nu;
+R3 ph; 
+mesh Th2= square(10,10,[(x-0.5)*3,(y-1.06)*3]);
+Ux = projection(Th2,nu=nu,Phat=ph).x-x;
+Uy = projection(Th2,nu=nu,Phat=ph).y-y;
+x=0;y=0;z=0;
+ cout << projection(Th2,nu=nu,Phat=ph) <<", " << nu <<","<< ph << endl; 
+ cout << Th2[nu][0].x << endl;
+ cout << Th2[nu][0].y  << endl;
+ cout << Th2[nu][1].x << endl;
+ cout << Th2[nu][1].y  << endl;
+ cout << Th2[nu][2].x << endl;
+ cout << Th2[nu][2].y  << endl;
+plot([Ux,Uy],Th2, wait=1);
+~~~
+The function d to Th2
+![](plot2.png)
+Finally some more advanced operations are done in 3D: signeddist(ThS) is the distance from points in the cube to the square ThS.
+~~~c++
+load "msh3";
+//meshL Lh2 = extract(Th2);
+meshS ThS= square3(10,10,[(x-0.5)*3,(y-1.06)*3,(x+y)/2]);
+mesh3 Th3=cube(10,10,10,[(x-0.5)*3,(y-1.06)*3,z*2-1]);
+fespace Uh(Th3,P1);
+Uh d3=signeddist(ThS);
+plot(d3,wait=1);
+~~~
+The signeddist function
+![](plot3.png)
+name: BlackScholes2D
+category: finance
+layout: example
+---
+
+# The Black-Scholes equation for financial derivatives
+
+In the documentation, 
+https://doc.freefem.org/models/evolution-problems.html#d-black-scholes-equation-for-an-european-put-option
+
+the following modeling equation for an European Put $u$ is to be integrated in  $( 0 , T ) \times R^+ \times R$:
+$$
+\left\{
+\begin{align*}&
+\partial_t u + \frac{(\sigma_1 x)^2}2\frac{\partial^2 u}{\partial x^2} + \frac{(\sigma_2 y)^2}2\frac{\partial^2 u}{ \partial y^ 2} + \sigma_1\sigma_2 x y \frac{\partial^2 u}{\partial x \partial y} + r x \frac{\partial u}{\partial x} + r y \frac{\partial u}{ \partial y} +r u = 0 ,
+\cr&
+u ( x , y , T ) = ( K - \max ( x , y ) )^+  
+\end{align*}
+\right.
+$$
+The 2 underlying asset (e.g. Renault and Peugeot shares) are valued at $x$ and $y$.
+
+The interest rate is $r$, the volatilities are $\sigma_1,\sigma_2$, the correlation is $\rho$. $K$ is the strike price.
+For example,
+~~~c++
+real sigma1 = 0.3;
+real sigma2 = 0.3;
+real rho = 0.3;
+real r = 0.05;
+real K = 40;
+~~~
+Notice that the problem is backward in time because final conditions are given and the signs of the differential operator is positive.  We will change $t$ to $T-t$ to work forward in tome.
+
+As usual we must work on the variational formulation: find $u\in V:=  L^2(0,T,H^1(\Omega))$ such that 
+$$
+\begin{aligned}&
+\int_\Omega\left\{\left(\partial_t u + r u+ ( -x r + x\sigma_1^2 + \frac12 x\rho\sigma_1\sigma_2)\partial_x u +(-y r + y\sigma_2^2 + \frac12 y\rho\sigma_1\sigma_2)\partial_y u\right) v
+\right.\cr&\left. + \frac{(\sigma_1 x)^2}2\partial_x u\partial_x v + \frac{(\sigma_2 y)^2}2{\partial_y u}{\partial_y v} + \frac{ρ}2\sigma_1\sigma_2 x y[ {\partial_x u}{\partial_y v}  +{\partial_y u}{\partial_x v}]\right\} = 0\quad \forall v\in V,
+\cr&
+u ( x , y , 0) = ( K − \max ( x , y ) )^+  
+\end{aligned}
+$$
+Boundary conditions  are not needed at $x=0$ and $y=0$ because the differential operator degenerates. At infinity there are implicit Neumann conditions.  In practice the problem must be localized, so $R^+\times R^+$ is replaced by $(0,L)\times(0,LL)$. Hence the mesh and the FEM space are  built as follows:
+~~~c++
+int m = 30;
+int L = 80;
+int LL = 80;
+int j = 100;
+mesh th = square(m, m, [L*x, LL*y]);
+// Fespace
+fespace Vh(th, P1);
+Vh u = max(K - max(x, y), 0.);
+Vh xveloc, yveloc, v, uold;
+~~~~
+An implicit in time Euler scheme is used, but in addition for stability and avoiding upwinding, we use the method of characteristics:
+$$
+\begin{aligned}&
+\partial_t u + r u+ ( -x r + x\sigma_1^2 + \frac12 x\rho\sigma_1\sigma_2)\partial_x u +(-y r + y\sigma_2^2 + \frac12 y\rho\sigma_1\sigma_2)\partial_y u
+\cr&
+\approx 
+\frac{1}{\delta t}(u^{n+1}-u^n(x-U\delta t,y-V\delta t) ) \text{ where }
+\cr&
+U=-x r + x\sigma_1^2 + \frac12 x\rho\sigma_1\sigma_2,
+\quad
+V=-y r + y\sigma_2^2 + \frac12 y\rho\sigma_1\sigma_2.
+\end{aligned}
+$$
+So the implementation is 
+~~~c++
+real dt = 0.01;
+for (int n = 0; n*dt <= 1.0; n++) {
+    xveloc = -x*r + x*sigma1^2 + x*rho*sigma1*sigma2/2;
+    yveloc = -y*r + y*sigma2^2 + y*rho*sigma1*sigma2/2;
+    // Update
+    uold = u;
+    // Solve
+    solve eq1(u, v, init=j, solver=LU)
+        = int2d(th)(
+              u*v*(r + 1/dt)
+            + dx(u)*dx(v)*(x*sigma1)^2/2
+            + dy(u)*dy(v)*(y*sigma2)^2/2
+            + dy(u)*dx(v)*rho*sigma1*sigma2*x*y/2
+            + dx(u)*dy(v)*rho*sigma1*sigma2*x*y/2
+        )
+        + int2d(th)(
+            - v*convect([xveloc, yveloc], dt, uold)/dt
+        )
+        + on(2,3,u=0)
+        ;
+}
+~~~~
+Notice the parameters in solve to indicate that the factorized matrix can be reused.  With the default solver of FreeFem this is no longer much of an optimization.
+Visualization is as usual
+~~~c++
+plot(u, fill=true, wait=true, value=true);
+~~~
+One could add mesh adaptiion by inserting above the line 
+// update
+the following
+   // Mesh adaptation
+       j = j + 1;
+       if (j > 20) {
+        th = adaptmesh(th, u, verbosity=1, abserror=1, nbjacoby=2,
+            err=0.001, nbvx=5000, omega=1.8, ratio=1.8, nbsmooth=3,
+            splitpbedge=1, maxsubdiv=5, rescaling=1) ;
+        j = 0;
+         u = u;
+         plot(th, wait=true);
+    }
+
+## Results
+The price of the Put 
+![](solution.png)
+Mesh adapted to the solution
+![](adaptedmesh.png)
+name: schwarz
+category: mathematics
+layout: example
+---
+
+## Domain Decomposition Method: solution by Schwarz iterations
+The Laplace equation is solved in a domain which is the union of a circle and a rectangle.  
+~~~c++
+real n = 4; // Mesh quality
+
+// Mesh
+border a(t=0, 1){x=t; y=0;}
+border a1(t=1, 2){x=t; y=0;}
+border b(t=0, 1){x=2; y=t;}
+border c(t=2, 0){x=t; y=1;}
+border d(t=1, 0){x=0; y=t;}
+border e(t=0, pi/2){x=cos(t); y=sin(t);}
+border e1(t=pi/2, 2*pi){x=cos(t); y=sin(t);}
+
+//Omega1 (rectangle)
+mesh th = buildmesh(a(5*n) + a1(5*n) + b(5*n) + c(10*n) + d(5*n));
+fespace Vh(th, P1);
+Vh v, u=0;
+
+//Omega2 (circle)
+mesh TH = buildmesh(e(5*n) + e1(25*n));
+fespace VH(TH,P1);
+VH V, U=0;
+~~~~
+The Schwarz algorithm solves iteratively and alternatively on the circle and the rectangle. The trace on the rectangle of the solution on the circle becomes the boundary conditon for thee problem on the rectangle and ssimilarly for the circle.
+~~~c++
+for (int i = 0; i < 4; i++) {
+  plot(U, u, wait=1, cmm="Iteration "+i);
+  // Solve on Omega2
+  solve AA(U, V)
+    = int2d(TH)(dx(U)*dx(V) + dy(U)*dy(V))
+    - int2d(TH)(V)
+    + on(e, U=u)
+    + on(e1, U=0);
+
+  // Solve on Omega1
+  solve aa(u, v)
+    = int2d(th)(dx(u)*dx(v) + dy(u)*dy(v))
+    - int2d(th)(v)
+    + on(a, d, u=U)
+    + on(a1, b, c, u=0);
+}
+
+plot(U, u, wait=1, cmm="Final solution");
+~~~~
+The solution at iteration 1
+![](solone.png)
+The solution at iteration 4
+![](sol1four.png)
+name: Stokes_composite
+category: fluid
+layout: example
+---
+
+# The Stokes system for creeping flow solved with composite FE
+The system is set in 2 dimensions:
+$$
+-\Delta u + \nabla p =\vec f, \quad 
+ \nabla\cdot u = 0   \hbox{ in }\Omega ,~~
+ u _{|\Gamma}= \vec g
+ $$
+with $\Omega$ the  square $(0,2\pi)\times(0,2\pi)$, $\vec f=[0,-4\cos x\sin y]^T$ and $\vec g=[\sin x\cos y,-\cos x \sin y]^T$. 
+
+A possible variational formulation is
+$$∀(v,q),~~∫_Ω ∇u:∇v−∫_Ωp\nabla\cdot v=∫_Ωf\cdot v,
+−∫_Ω\nabla\cdot u q−∫_Ωϵpq=0.
+$$
+~~~c++
+macro grad(u) [dx(u),dy(u)]//
+macro Grad(u1,u2) [ grad(u1), grad(u2)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+
+// definition of the boundary condition 
+func g1 = sin(x)*cos(y);
+func g2 = -cos(x)*sin(y);
+
+// defintion of the right hand side
+func f1 = 0;
+func f2 = -4*cos(x)*sin(y);
+
+int nn = 30; // number of edge in each direction
+mesh Th=square(nn,nn,[2*pi*x,2*pi*y],flags=3);
+mesh ThP=Th;                    // Pressure mesh
+mesh ThU=trunc(ThP,1,split=2);  // Velocity mesh
+
+fespace Uh(ThU,[P1,P1]);
+fespace Ph(ThP,P1);
+~~~
+While it is unecessary to use flags=3, it does the following:
+it will produce a mesh where all quads are split with diagonal $x-y=$ constant and forbids of a 3 vertices on the boundary at corners.
+
+Using different meshes for the velocity and pressure is also not necessary but it is given to illustrate composite elements as explained in the documentation here
+
+https://doc.freefem.org/documentation/composite.html
+
+The solver is standard.  The penalization of $pq$ is needed to avoid the singularity of the system because in Stokes' equations, pressure is defined up to a constant.
+~~~c++
+Uh [u1,u2],[v1,v2];
+Ph p,q;
+
+solve Stokes ( <[u1,u2],[p]>, <[v1,v2],[q]>) = int2d(ThU)( (Grad(u1,u2):Grad(v1,v2)) )
++ int2d(ThU)( - div(u1,u2)*q - div(v1,v2)*p )
++ int2d(ThP)( -1e-10*p*q )
+- int2d(ThU) ( [f1,f2]'*[v1,v2] )
++ on(1,2,3,4,u1=g1,u2=g2);
+
+plot( u1, cmm="u1" );
+plot( u2, cmm="u2" );
+plot( p,  cmm="p" );
+~~~
+## Results
+isovalue lines of the pressure.
+![](solution.png)
+name: NSNewton
+category: Fluid Mechanics
+layout: example
+---
+
+## Stationnary imcompressible Navier Stokes Equation solved with Newton's method 
+The time independent Navier-Stokes equations for an incompressible fluid are
+$$
+-\nu\Delta u +u\cdot\nabla u -\nabla p =0,~~~\nabla\cdot u=0~~~in ~ \Omega
+$$
+We are interested by the flow around a cylinder in an infinite fluid (approximated by a rectangle with a round side on the left and a circle in the center).
+Dirichlet boundary conditons aare imposed on boundaries 2 (the cylinder)  and 1, the left  (inflow) and lateral sides (tangent flow)  of the rectangle.
+
+Here $\Omega$ is a a cylinder.
+~~~c++
+verbosity=0; //To minimize messages at execution
+
+real R = 5, L = 15;
+
+// Mesh
+border cc(t=0, 2*pi) {x=cos(t)/2; y=sin(t)/2; label=2;}
+border ce(t=pi/2, 3*pi/2) {x=cos(t)*R; y=sin(t)*R; label=1;}
+border beb(tt=0, 1) {real t=tt^1.2; x=t*L; y=-R; label=1;}
+border beu(tt=1, 0) {real t=tt^1.2; x=t*L; y=R; label=1;}
+border beo(t=-R, R) {x=L; y=t; label=0;}
+border bei(t=-R/4, R/4) {x=L/2; y=t; label=0;}
+mesh Th = buildmesh(cc(-40) + ce(20) + beb(15) + beu(15) + beo(8) + bei(10));
+plot(Th);
+~~~~
+The mesh
+![](mesh.png)
+To resolve the nonlinearity we use a linearization
+$$
+\begin{align*}
+-\nu\Delta (u+du) +u\cdot\nabla(u+du)+du\cdot\nabla v-\nabla q =0,
+\\
+\nabla\cdot (u+du)=0~~~in ~ \Omega
+\end{align*}
+$$
+This, then, is the Newton method:  given $u=u^n$ compute $du,dq$ then set $u^{n+1}=u+du$
+In variational form: find $du_1,du_2,dq$,
+$$\begin{align*}
+\int_{\Omega}\left(\nu\nabla du:\nabla v + (u\cdot\nabla du + du\cdot\nabla u +\nabla dq )v+\epsilon dq\cdot r\right))=0,~~\forall v, r
+\end{align*}
+$$
+For stability the iterations are started with a large $\nu$ and then $\nu$ is decreased up to its desired value.
+~~~c++
+real nu = 1./50, nufinal = 1/200., cnu = 0.5;
+macro Grad(u1, u2) [dx(u1), dy(u1), dx(u2), dy(u2)]//
+macro UgradV(u1, u2, v1, v2) [[u1, u2]'*[dx(v1), dy(v1)], [u1, u2]'*[dx(v2), dy(v2)] ]//
+macro div(u1, u2)  (dx(u1) + dy(u2))//
+
+fespace Xh(Th, P2);
+Xh u1, u2, v1, v2, du1, du2, u1p, u2p;
+fespace Mh(Th, P1);
+Mh p, q, dp, pp;
+
+// Intial guess with B.C.
+u1 = (x^2+y^2) > 2;
+u2 = 0;
+
+// numerical parameters
+real eps = 1e-4;
+
+func bb = [[-1, -2], [4, 2]]; // bounding box for the plot
+
+// Loop on vicosity
+while(1) {
+	int n;
+	real err = 0;
+	// Newton Loop
+	for (n = 0; n < 15; n++) {
+		solve Oseen([du1, du2, dp], [v1, v2, q])
+			= int2d(Th)(
+					nu*(Grad(du1,du2)'*Grad(v1,v2))
+				+ UgradV(du1,du2, u1, u2)'*[v1,v2]
+				+ UgradV( u1, u2,du1,du2)'*[v1,v2]
+				- div(du1,du2)*q - div(v1,v2)*dp
+				- 1e-8*dp*q // stabilization term
+			)
+			- int2d(Th)(
+				  nu*(Grad(u1,u2)'*Grad(v1,v2))
+				+ UgradV(u1,u2, u1, u2)'*[v1,v2]
+				- div(u1,u2)*q - div(v1,v2)*p
+				- 1e-8*p*q
+			)
+			+ on(1,2,du1=0,du2=0)
+			;
+
+		u1[] -= du1[];
+		u2[] -= du2[];
+		p[] -= dp[];
+
+		real Lu1 = u1[].linfty, Lu2 = u2[].linfty, Lp = p[].linfty;
+		err = du1[].linfty/Lu1 + du2[].linfty/Lu2 + dp[].linfty/Lp;
+
+		cout << n << " err = " << err << " " << eps << " rey  = " << 1./nu << endl;
+		if(err < eps) break; // converge
+		if( n > 3 && err > 10.) break; // Blowup ?
+	}
+	if(err < eps) {// if converge  decrease nu (more difficult)
+		plot([u1, u2], p, wait=1, cmm=" rey = " + 1./nu, coef=0.3, bb=bb);
+		if(nu == nufinal) break;
+		if(n < 4) cnu = cnu^1.5; // fast converge => change faster
+		nu = max(nufinal, nu*cnu); // new vicosity
+		u1p = u1;
+		u2p = u2;
+		pp = p; // save correct solution
+	}
+	else {  // if blowup, increase nu (more simple)
+		assert(cnu < 0.95); // final blowup
+		nu = nu/cnu; //  get previous value of viscosity
+		cnu = cnu^(1./1.5); // no conv. => change lower
+		nu = nu* cnu;  // new vicosity
+		cout << " restart nu = " << nu << " Rey = " << 1./nu << "  (cnu = " << cnu << " ) \n";
+		// restore correct solution
+		u1 = u1p;
+		u2 = u2p;
+		p = pp;
+	}
+}
+cout << " CPU "<< clock()<< " s " << endl;
+~~~
+The solution
+![](solution.png)
+name: Muwave
+category:Electromagnetism
+layout: example
+---
+
+## Compute the stationary electromagnetic wave for a microwave oven
+
+The domain is a square box with a rectangle inside to simulate the object (called meast below) which is heated by the wave.  The electromagnetic source is from the top boundary
+~~~c++
+int n = 2;
+real a = 20, b = 20, c = 15, d = 8, e = 2, l = 12, f = 2, g = 2;
+
+// Mesh
+border a0(t=0, 1) {x=a*t; y=0; label=1;}
+border a1(t=1, 2) {x=a; y= b*(t-1); label=1;}
+border a2(t=2, 3) {x=a*(3-t); y=b; label=1;}
+border a3(t=3, 4) {x=0; y=b-(b-c)*(t-3); label=1;}
+border a4(t=4, 5) {x=0; y=c-(c-d)*(t-4); label=2;}
+border a5(t=5, 6) {x=0; y= d*(6-t); label=1;}
+
+border b0(t=0, 1) {x=a-f+e*(t-1); y=g; label=3;}
+border b1(t=1, 4) {x=a-f; y=g+l*(t-1)/3; label=3;}
+border b2(t=4, 5) {x=a-f-e*(t-4); y=l+g; label=3;}
+border b3(t=5, 8) {x=a-e-f; y=l+g-l*(t-5)/3; label=3;}
+
+mesh Th = buildmesh(a0(10*n) + a1(10*n) + a2(10*n) + a3(10*n) + a4(10*n) + a5(10*n)
+  + b0(5*n) + b1(10*n) + b2(5*n) + b3(10*n));
+~~~
+The geometry
+![](geometry.png)
+The wave is solution of a PDE in the complex domain for which the variational formulation is
+$$
+\begin{align*}
+\int_\Omega(
+      (1+R)v w
+    -(1-0.5i)(\partial_x v\partial_x w+ \partial_y v \partial_y w )=0
+   \\
+     ~~~~~ \forall  w~:~w|_{\Gamma_1\cup\Gamma_2}=0,
+    \\
+    v|_{\Gamma_1}=0,~~~~
+ v|_{\Gamma_2}=\sin(\pi\frac{y-c}{c-d})
+    \end{align*}
+$$
+and where $R$ takes a different value in the meat. This is implemented as follows
+~~~c++
+real meat = Th(a-f-e/2, g+l/2).region, 
+     air= Th(0.01, 0.01).region;
+plot(Th, wait=1);
+
+fespace Vh(Th, P1);
+Vh R = (region-air)/(meat-air);
+Vh<complex> v, w;
+
+solve muwave(v, w)
+  = int2d(Th)(
+      v*w*(1+R)
+    -(dx(v)*dx(w)+dy(v)*dy(w))*(1-0.5i)
+  )
+  + on(1, v=0)
+  + on(2, v=sin(pi*(y-c)/(c-d)));
+
+Vh vr = real(v), vi = imag(v);
+plot(vr, wait=1, ps="rmuonde.ps", fill=true);
+plot(vi, wait=1, ps="imuonde.ps", fill=true);
+~~~~
+Notice that the linear system is complex and could be singular (resonnance). 
+![](realpart.png)
+![](imaginepart.png)
+To compute the temperature in the meat we solve
+$$
+\begin{align*}
+\int_\Omega(
+     (\partial_x u\partial_x w+ \partial_y u \partial_y w )= \int_\Omega|v|^2w
+   \\
+     ~~~~~ \forall  w~:~w|_{\Gamma_1\cup\Gamma_2}=0,
+    \\
+    v|_{\Gamma_1\cup\Gamma_2}=0,
+    \end{align*}
+$$
+~~~c++
+fespace Uh(Th,P1);
+Uh u, uu, ff=1e5*(vr^2 + vi^2)*R;
+
+solve temperature(u, uu)
+  = int2d(Th)(
+      dx(u) * dx(uu)
+    + dy(u) * dy(uu)
+  )
+  - int2d(Th)(ff*uu)
+  + on(1, 2, u=0);
+
+plot(u, wait=1, ps="tempmuonde.ps", fill=true);
+~~~
+The temperature
+![](heat.png)
+name: Lamé
+category: Solid Mechanics
+layout: example
+---
+
+## Compute the deflection of a 2d elastic beam
+The geometry is a rectangle, clamped on the left vertical side and pulled down by itsown weight.
+The equations are
+$$
+\displaystyle{
+	\begin{align*}&
+  \int_{\Omega}[2\mu~\epsilon(u)\cdot\epsilon(v) +\lambda (\nabla\cdot u )(\nabla\cdot v)]  = \int_{\partial\Omega}{f u_2},
+  \quad \forall v\in V(\Omega)
+  \cr&
+  \nabla\cdot u= \partial_x u_1+\partial_y u_2,
+  \cr&
+  \epsilon(u)=[\partial_x u_1,\partial_y u_2, \frac1{\sqrt{2}}(\partial_y u_1 + \partial_x u_2)].
+  \end{align*}
+}
+$$
+where $V(\Omega)=\{ v\in (H(\Omega)^2): v|_S=0\}$ and $S\subset\partial\Omega$ is the portion of the boundary where the beam is clamped.
+$\mu$ and $\lambda$ are computed from the Young and Poisson constants $E,\sigma$,
+$$
+\mu = \frac{E}{(2(1 + \nu))}, \quad
+\lambda =\frac{E~\nu}{((1 + \nu)(1 - 2\nu))}
+$$
+
+
+~~~c++
+real E = 21e5, nu = 0.28;
+real f = -1;
+real mu = E/(2*(1 + nu));
+real lambda = E*nu/((1 + nu)*(1 - 2*nu));
+
+mesh Th = square(10, 10, [20*x, 2*y-1]);
+
+fespace Vh(Th, P2);
+Vh u, v, uu, vv;
+
+real sqrt2 = sqrt(2.);
+macro epsilon(u1, u2) [dx(u1), dy(u2), (dy(u1)+dx(u2))/sqrt2] // EOM
+macro div(u, v) (dx(u) + dy(v)) // EOM
+
+solve lame([u, v], [uu, vv])
+  = int2d(Th)(  lambda*div(u,v)*div(uu,vv)
+              + 2.*mu*(epsilon(u,v)'*epsilon(uu,vv)) )
+  - int2d(Th)(f*vv) + on(4, u=0, v=0);
+
+real coef=100;
+plot([u, v], wait=1, ps="lamevect.ps", coef=coef);
+~~~~
+The displacement vectors
+![](solution.png)
+A better way to display the result is to move the mesh by the displacement $[u,v]^T$.
+~~~c++
+mesh th1 = movemesh(Th, [x+u*coef, y+v*coef]);
+plot(th1, wait=1, ps="lamedeform.eps");
+
+real dxmin = u[].min;
+real dymin = v[].min;
+cout << "   displacement  max x = " << dxmin << " y = " << dymin << endl;
+cout << "   displacement (20,0) = " << u(20,0) << " " << v(20,0) << endl;
+~~~~
+![](dispbeam.png)
+name: heatex
+category: physics
+layout: example
+---
+# The time independent  Heat Equation
+
+The heat equation  with a discontinuous thermal diffusion is integrated:
+$$
+-\nabla\cdot(\kappa\nabla u)=0, ~~u|_{\Gamma_1}=u_\Gamma.
+$$
+In this example the domain $\Omega$ is a circle minus 2 rectangles on which boundary the temperature is imposed.
+The thermal diffusion is $\kappa=1+4~{\bf 1}_{x\in(-2,-1)\times(-3,3)}$ where ${\bf 1}_x$ is the Heaviside function. Finally $u=20$ on the outer circle and 100 one the right rectangle. The left rectangle is there only to define $\kappa$. It corresponds to the following FreeFem script
+
+~~~c++
+int C1 = 99, C2 = 98; // could be anything
+
+// Mesh
+border C0(t=0, 2*pi){x=5*cos(t); y=5*sin(t);}
+
+border C11(t=0, 1){x=1+t;  y=3;      label=C1;}
+border C12(t=0, 1){x=2;    y=3-6*t;  label=C1;}
+border C13(t=0, 1){x=2-t;  y=-3;     label=C1;}
+border C14(t=0, 1){x=1;    y=-3+6*t; label=C1;}
+
+border C21(t=0, 1){x=-2+t; y=3;      label=C2;}
+border C22(t=0, 1){x=-1;   y=3-6*t;  label=C2;}
+border C23(t=0, 1){x=-1-t; y=-3;     label=C2;}
+border C24(t=0, 1){x=-2;   y=-3+6*t; label=C2;}
+
+mesh Th=buildmesh(C0(50)
+  + C11(5) + C12(20) + C13(5) + C14(20)
+  + C21(-5) + C22(-20) + C23(-5) + C24(-20));
+plot(Th, wait=1, ps="heatexTh.ps");
+
+// Fespace
+fespace Vh(Th, P1);
+Vh u, v;
+Vh kappa = 1 + 4*(x<-1)*(x>-2)*(y<3)*(y>-3);
+
+// Problem
+solve a(u, v)
+  = int2d(Th)(
+    kappa*(dx(u)*dx(v) + dy(u)*dy(v))
+  )
+  + on(C0, u=20)
+  +on(C1, u=100);
+
+// Plot
+plot(u, value=true, wait=1, fill=true);
+~~~
+The solution:
+![](solution.png)
+name: optimcontrol
+category:optimization using BFGS
+layout: example
+---
+# Optimal control with 3 parameters solved by BFGS
+
+Let $\Omega$ be a bounded open set of $R^2$. Let $u_d$ and $w$ be given.  Consider
+$$
+\begin{align*}&
+J(z)=\min_{z\in Z}\int_\Omega|u-u_d|^2 \hbox{where $u$ is solution of}
+\cr&
+\int_\Omega\nu(z)\nabla u\nabla\hat u =0~~~\forall \hat u\in  H^1_0(\Omega);~~u-w\in H^1_0(\Omega)
+\cr&
+\end{align*}
+$$
+where $\nu(z)$ is some given function of $z$.
+$\texttt{BFGS}$ is an optimization module which can be called to find a local minimum of $J$ but it requires the derivative of $J$ with respect to $z$.
+
+In this example $\Omega$ is a disk of radius 5.  The optimization space $Z$ is the set of functions which are constant on 3 smaller disks, $D_0,D_1,D_2$ of radius 1 in $\Omega$ and 1 outside these smaller disk.  Thus the dimension of $Z$ is 3:
+$$
+Z=\{z: ~ z(x,y)=1+z_0{\bf 1}_{D_0}+z_0{\bf 1}_{D_1}+z_0{\bf 1}_{D_2}\}
+$$
+where ${\bf 1}_{D_i}$ is the characteristic function of $D_i$.
+In the follwoing example, $w=x^3-y^3$.
+~~~c++
+border aa(t=0, 2*pi) {x = 5*cos(t); y = 5*sin(t);}
+border bb(t=0, 2*pi) {x = cos(t); y = sin(t);}
+border cc(t=0, 2*pi) {x = -3+cos(t); y = sin(t);}
+border dd(t=0, 2*pi) {x = cos(t); y = -3+sin(t);}
+mesh th = buildmesh(aa(70) + bb(35) + cc(35) + dd(35));
+
+// Fespace
+fespace Vh(th, P1);
+Vh Ib = ((x^2+y^2)<1.0001),
+   Ic = (((x+3)^2+ y^2)<1.0001),
+   Id = ((x^2+(y+3)^2)<1.0001),
+   Ie = (((x-1)^2+ y^2)<=4),
+   ud, u, uh, du;
+
+// Problem
+real[int] z(3);
+problem A(u, uh)
+  = int2d(th)(
+    (1 + z[0]*Ib + z[1]*Ic + z[2]*Id)*(dx(u)*dx(uh) + dy(u)*dy(uh))
+  )
+  + on(aa, u=x^3-y^3);
+
+// A test 
+z[0] = 2; z[1] = 3; z[2] = 4;
+A; 
+plot(u, wait=1);
+~~~
+The test will also be our target
+![](test.png)
+BFGS requires $J$ and $J'_z$ to be defined as C-functions
+~~~c++
+ud = u;
+ofstream f("J.txt");
+
+func real J(real[int] & Z) {
+    for (int i = 0;i < z.n; i++) z[i] = Z[i];
+    A;
+    real s = int2d(th)(Ie*(u-ud)^2);
+    f << s << "   "; // so that every time J is called this is printed
+    return s;
+}
+
+real[int] dz(3), dJdz(3);
+
+problem B(du, uh)
+  =int2d(th)(
+    (1 + z[0]*Ib + z[1]*Ic + z[2]*Id)*(dx(du)*dx(uh) + dy(du)*dy(uh))
+  )
+  +int2d(th)(
+    (dz[0]*Ib + dz[1]*Ic + dz[2]*Id)*(dx(u)*dx(uh) + dy(u)*dy(uh))
+  )
+  +on(aa, du=0);
+
+func real[int] DJ(real[int] &Z) {
+  for(int i = 0; i < z.n; i++) {
+    for(int j = 0; j < dz.n; j++)
+      dz[j]=0;
+    dz[i] = 1;
+    B;
+    dJdz[i] = 2*int2d(th)(Ie*(u-ud)*du);
+  }
+  return dJdz;
+}
+~~~
+We are now ready to call BFGS with initial value for the optimization parameter $Z[i]=1$, $i=0,1,2$.
+~~~c++
+real[int] Z(3);
+for(int j = 0; j < z.n; j++) Z[j] = 1;
+
+BFGS(J, DJ, Z, eps=1.e-6, nbiter=15, nbiterline=20);
+~~~
+The results are printed and plotted:
+~~~c++
+cout << "BFGS: J(z) = " << J(Z) << endl;
+for(int j = 0; j < z.n; j++) cout << z[j] << endl;
+plot(ud, value=1, ps="u.ps");
+~~~
+The solution
+![](solution.png)
+name: Convects
+category: PDE
+layout: example
+---
+
+# Convection using 2 different methods
+### - Characteristics-Galerkin methods
+### - discontinuous Galerkin methods
+A unit bell rotates in a disk, according to
+$$
+\partial_t c + u\nabla c =0,
+\quad 
+c(x,0) =e^{-\lambda[|x-x_0|^2-|y-y_0|^2]}
+$$
+where $u=[u_1,u_2]^T$ is the convective velocity assumed to be that of an incompressible fluid (i.e.$\nabla\cdot u=0$) tangent to the boundary of the disk, $u\cdot n=0$ on $\partial\Omega$, where $n$ is the normal to the boundary.
+The mesh is generated by
+~~~c++
+border C(t=0, 2*pi){x=cos(t); y=sin(t);}
+mesh Th = buildmesh(C(100));
+~~~
+The problem has an analytical solution : $c$ is constant on the curves $t\to X(t)$
+$$
+\dot X(t)=u(X(t),t), \quad \frac{d c(X(t),t)}{d t}=0
+$$
+From these it is easy to show that
+$$
+c(x,t)\approx c(x-u_1(x,t)\delta t,y-u_2(x,t)\delta t,t-\delta t)
+$$
+In our example $u_1=y,~u_2=-x, x_0=0.3, y_0=0.3$.
+~~~c++
+verbosity = 1;
+real dt = 0.17;
+fespace Uh(Th, P1);
+Uh cold, c = exp(-10*((x-0.3)^2 +(y-0.3)^2));
+Uh u1 = y, u2 = -x;
+~~~~
+The FreeFem function convect does the following computation
+$$
+\begin{align*}&
+\texttt{convect}([u_1,u_2],-dt,c)
+\cr&=c(x-u_1(x,t)\delta t,y-u_2(x,t)\delta t,t-\delta t)
+\end{align*}
+$$
+Consequently, the solver is the time loop
+~~~c++
+real t = 0;
+for (int m = 0; m < 2*pi/dt; m++) {
+	t += dt;
+	cold = c;
+	c = convect([u1, u2], -dt, cold);
+	plot(c, cmm=" t="+t + ", min=" + c[].min + ", max=" +  c[].max);
+}
+~~~
+However the following is much less diffusive, at the cost of a linear solver at each time step
+~~~c++
+Uh ch;
+t=0;
+c = exp(-10*((x-0.3)^2 +(y-0.3)^2));
+for (int m = 0; m < 2*pi/dt; m++) {
+	t += dt;
+	cold = c;
+	solve a(c,ch) = int2d(Th)(c*ch) 
+	      - int2d(Th)(convect([u1, u2], -dt, cold)*ch);
+	plot(c, cmm=" t="+t + ", min=" + c[].min + ", max=" +  c[].max);
+}
+~~~
+Finally one may improve the computing time by reusing the matrice (although FreeFem does it behind the scene) but the method is again too diffusive because it has one extra interpolation.
+~~~~c++
+varf aa(c,ch)= int2d(Th)(c*ch) ;
+varf rhs(c, ch) = int2d(Th)(c*ch);
+
+matrix  A = aa(Uh, Uh, verb=1);
+matrix B = rhs(Uh, Uh);
+c = exp(-10*((x-0.3)^2 +(y-0.3)^2));
+for (t = 0; t < 2*pi ; t += dt) {
+	cold = c;
+	Uh f=convect([u1, u2], -dt, cold);
+	ch[] = B* f[];
+	c[] = A^-1*ch[];
+	plot(c, fill=1, cmm="t="+t + ", min=" + c[].min + ", max=" +  c[].max);
+}
+~~~~
+The same problem can be solved with a Discontinuous Galerkin method
+~~~c++
+real u, al=0.5;
+dt = 0.05;
+
+fespace Vh(Th, P1dc);
+Vh w, ccold, v1 = y, v2 = -x, cc = exp(-10*((x-0.3)^2 +(y-0.3)^2));
+
+macro n()(N.x*v1+N.y*v2) //
+problem  Adual(cc, w, init=t)
+	= int2d(Th)((cc/dt + (v1*dx(cc) + v2*dy(cc)))*w)
+	+ intalledges(Th)((1-nTonEdge)*w*(al*abs(n) - n/2)*jump(cc))
+//  - int1d(Th, C)((n(u)<0)*abs(n(u))*cc*w)	
+// unused because cc=0 on d(Omega)^-
+	- int2d(Th)(ccold*w/dt);
+
+for (t = 0; t < 2*pi; t += dt) {
+	ccold = cc;
+	Adual;
+	plot(cc, fill=1, cmm="t="+t + ", min=" 
+	+ cc[].min + ", max=" +  cc[].max);
+}
+~~~
+To force the level lines at fixed values one can define viso:
+~~~c++
+real [int] viso=[-0.1, 0, 0.05, 0.1, 0.15, 0.2, 
+0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 
+0.7, 0.75, 0.8, 0.9, 1];
+plot(c,cc, wait=1, value=1, ps="convectDG.ps", viso=viso);
+~~~~
+Another implementation of the DG to speed up computing time:
+~~~c++
+varf aadual(cc, w)
+	= int2d(Th)((cc/dt + (v1*dx(cc) + v2*dy(cc)))*w)
+	+ intalledges(Th)((1-nTonEdge)*w*(al*abs(n) - n/2)*jump(cc));
+
+varf bbdual(ccold, w) = -int2d(Th)(ccold*w/dt);
+
+matrix  AA = aadual(Vh, Vh, verb=1);
+matrix BB = bbdual(Vh, Vh);
+
+// Loop
+Vh f = 0;
+for (t = 0; t < 2*pi ; t += dt) {
+	ccold = cc;
+	f[] = BB* ccold[];
+	cc[] = AA^-1*f[];
+	plot(cc, fill=0, cmm="t="+t + ", min=" + cc[].min + ", max=" +  cc[].max);
+}
+
+// Plot
+plot(cc, wait=1, fill=1, value=1, ps="convectDG.eps", viso=viso);
+~~~
+name: Membrane
+category: Solid Mechanics
+layout: example
+---
+
+## Compute the deflection of a 2d clamped mebrane
+The geometry is an ellipse, clampedon ${\Gamma_1}$  at altitude $z$ and  pulled down by a volumic force f.
+~~~c++
+func z = x;
+// Mesh
+real theta = 4.*pi/3.;
+real a = 2., b = 1.; // Half the length of the major and minor axis
+border Gamma1(t=0, theta)    {x=a*cos(t); y=b*sin(t);}
+border Gamma2(t=theta, 2*pi) {x=a*cos(t); y=b*sin(t);}
+mesh Th = buildmesh(Gamma1(100) + Gamma2(50));
+// Fespace
+fespace Vh(Th,P2); // P2 conforming triangular finite element space
+Vh phi, w, f = 1;
+~~~
+Note that $z$ is a reseerved word (used for 3D applications) but it can be overriden.  
+
+The equations for the membrane are
+$$
+-\Delta \phi=f, ~~\phi|_{\Gamma_1}=z, 
+$$
+And in variational form, 
+$$
+  \int_{\Omega}\nabla \phi \cdot\nabla w = \int_\Omega f w,\quad  ~\phi|_{\Gamma_1}=z,
+$$
+for all $w\in V$, where $V(\Omega)=\{ w\in (H(\Omega)^2): w|_{\Gamma_1}=0\}$.
+~~~c++
+solve Laplace(phi, w)
+       =int2d(Th)(  dx(phi)*dx(w) + dy(phi)*dy(w))
+       - int2d(Th)(f*w) + on(Gamma1, phi=z);
+
+// Plot
+plot(Th,phi, wait=true, fill=true,dim=3,ps="membrane.ps"); 
+~~~
+The graphics in FreeFem are minimal.  
+![](solution.png)
+Publication quality graphics can be generated by call ing Paraview or gnuplot.
+Here is an example of export to gnupot
+~~~c++
+{
+  ofstream ff("graph.txt");
+  for (int i = 0; i < Th.nt; i++) {
+    for (int j = 0; j < 3; j++)
+      ff << Th[i][j].x  << "    " << Th[i][j].y << "  " << phi[][Vh(i,j)] << endl;
+  ff << Th[i][0].x << "    " << Th[i][0].y << "  " << phi[][Vh(i,0)] << endl << endl << endl;
+  }
+}
+// Save the mesh. Could be reused in another script with readmesh
+savemesh(Th, "Th.msh");
+~~~
+Then call gnuplot in a terminal window and type
+set palette rgbformulae 30,31,32
+splot "graph.txt" w l pal
+![](gnuplot.png)
+name: heat
+category: thermodynamics
+layout: example
+---
+## Time dependent heat equation  with a discontinuous thermal diffusion
+The time dependent heat equation  with a discontinuous thermal diffusion is integrated:
+$$
+\partial_t u - \nabla\cdot(k\nabla u)=0, ~~u|_{\Gamma_1}=u_\Gamma,~~k\frac{\partial u}{\partial n}|_{\Gamma_2}+k_f(u-u_e)=0,~~u_{t=0}=0.
+$$
+In this example the domain $\Omega$ is a rectangle $(0,3)\times(0,1)$; $k=1.8~{\bf 1}_{y<0.5}+0.2$, $k_f=1$ where ${\bf 1}_x$ is the Heaviside function.  The time varies from 0 to 5. Finally $u_e=20$. It corresponds to the FreeFem script
+~~~c++
+func k = 1.8*(y < 0.5) + 0.2;
+real kf = 1, ue = 20, T = 5, dt = 0.1;
+
+// Mesh
+mesh Th = square(150, 50, [3*x, y]);
+
+// Fespace
+fespace Vh(Th, P1);
+Vh u, uold, v, usave;
+~~~~
+An Euler imlicit scheme is used for the time. After time discretisation, the variational formulation for $u=u^{n+1}$ is
+$$
+\int_\Omega\frac u{\delta t} \hat u+ k\nabla u\nabla\hat u + \int_{\Gamma_2}k_f u \hat u =\int_\Omega\frac{u^n}{\delta t}\hat u + \int_{\Gamma_2}k_f u_e\hat u,~~~u|_{\Gamma_1}=u_\Gamma,
+~~\forall \hat u~\hbox{ s.t. }\hat u_h|_{\Gamma_2}=0.
+$$
+~~~c++
+int kk=0;
+problem Heat(u, v, init=kk)
+  = int2d(Th)(
+      u*v/dt
+    + k*(dx(u)*dx(v) + dy(u)*dy(v))
+  )
+  + int1d(Th, 1, 3)(kf*v*u)
+  - int1d(Th, 1, 3)(kf*v*ue)
+  - int2d(Th)(uold*v/dt)
+  + on(2, 4, u=30);
+
+bool withplot = 0;
+real cpu1, cpu2;
+real cpu = clock();
+
+// Initialization
+u = 0;
+
+// Basic time loop
+for (real t = 0; t < T; t += dt) {
+  uold = u;
+  Heat;
+  kk++;
+  if (withplot) plot(u);
+}
+
+cpu1 = clock()-cpu;
+plot(u);
+usave[] = u[];
+~~~~
+$\texttt{cpu}$ gives a measure of the computing time. $\texttt{usave}$ will be used later to compare with iteration integration method.  Notice that $u[]$ addresses the array of values at the vertices of $u$.
+
+Now the same problem is solved using an explicit construction of the linear system.  We begin with the matrix A:
+~~~c++
+varf vA(u, v) = int2d(Th)( u*v/dt
+    + k*(dx(u)*dx(v) + dy(u)*dy(v))
+    )
+  + int1d(Th, 1, 3)(kf*v*u)
+  + on(2, 4, u=30);
+ matrix A = vA(Vh, Vh, solver=sparsesolver);
+~~~~
+The righthandside is also a matrix B times a vector plus another vector vL.
+~~~c++
+varf vB(u, v) = int2d(Th)(u*v/dt) ;
+varf vRHS(u, v) = int1d(Th, 1, 3)(kf*v*ue);
+varf vL(u, v) = on(2, 4, u=30);
+
+  cpu = clock();
+  real[int] rhsbc = vL(0, Vh);
+  real[int] rhs0 = vRHS(0, Vh);
+  matrix B = vB(Vh, Vh);
+
+  // Initialization
+  u = 0;
+
+  // Optimized time loop (speed of C language)
+  for (real t = 0; t < T; t += dt) {
+    real[int] b = B*u[];
+    b += rhs0;
+    b = rhsbc ? rhsbc : b;
+    u[] = A^-1*b;
+    if(withplot) plot(u);
+  }
+  cpu2 = clock() - cpu;
+
+plot(u, cmm="u2");
+cout << " cpu method 1 = " << cpu1 << " cpu method matrix = " << cpu2 << " ratio = " <<  cpu1/cpu2 << endl;
+~~~
+![](solution.png)
+name: condensator
+category: electrostatics
+layout: example
+---
+
+# The Black-Scholes equation for financial derivatives
+
+In the documentation, 
+https://doc.freefem.org/tutorials/heatExchanger.html#heat-exchanger
+
+It is quite easy to compute the electrostatic potential $u$ between 2 plates, one at potential -1 and the other at potential 1.  The plates $C_1,C_3$ are inside a round container $C_2$.
+
+The geometry is a bit painful to describe with the keyword border.
+~~~c++
+int C1 = 1; // labels to identify the 2 plates C1,C3 and the containner C2
+int C2 = 2; // could be any number
+int C3 = 3;
+// Mesh
+border C0(t=0, 2*pi){x=5*cos(t); y=5*sin(t); label=C2;}
+
+border C11(t=0, 1){ x=1+t;  y=3;      label=C1;}
+border C12(t=0, 1){ x=2;    y=3-6*t;  label=C1;}
+border C13(t=0, 1){ x=2-t;  y=-3;     label=C1;}
+border C14(t=0, 1){ x=1;    y=-3+6*t; label=C1;}
+
+border C21(t=0, 1){ x=-2+t; y=3;      label=C3;}
+border C22(t=0, 1){ x=-1;   y=3-6*t;  label=C3;}
+border C23(t=0, 1){ x=-1-t; y=-3;     label=C3;}
+border C24(t=1, 0){ x=-2;   y=-3+6*t; label=C3;}
+
+mesh Th=buildmesh(C0(50)
+    +C11(5)+C12(20)+C13(5)+C14(20)
+    +C21(5)+C22(20)+C23(5)+C24(-20));
+plot(Th, wait=true);
+~~~~
+![](mesh.png)
+The electrosptatic potential equation in absence of volumic chaarges is
+$$
+\Delta u =1,\quad u|_{C_1}=-1,\quad u|_{C_2}=0,\quad u|_{C_3}=1,
+$$
+The variational formulation is: find $u\in H^1(\Omega)$ with $u|_{C_i}=i-2, i=1,2,3$,
+$$
+\int_\Omega\nabla u\cdot\nabla v=0\quad \forall v\in H^1_0(\Omega).
+$$
+~~~c++
+fespace Vh(Th, P1);
+Vh u, v;
+
+// Problem
+solve a(u, v)
+    = int2d(Th)(
+          dx(u)*dx(v) + dy(u)*dy(v)
+    )
+    + on(C1, u=1) + on(C2, u=0) + on(C3, u=-1);
+
+// Plot
+plot(u, value=true, ps="condersor.ps");
+~~~
+Notice that the solution is stored in a file condensor.eps in postscript format next to the program file. The extension .ps means it is a postcript format (don't use .eps at this elvel). To insert it in a publication you may use the linux command
+    ps2eps condersor.ps
+    epstopdf condensor.eps
+
+![](solution.png)
+name: sound
+category: physics
+layout: example
+---
+
+# The wave equation and some eigen modes
+The geometry is a 2D perpandicular cross section of a concert hall. It is generated by a polygon.
+~~~c++
+real kc2 = 1; // try this value 19.4256
+func g = y*(1-y);
+real sigma = 20; // value of the shift
+int nev = 2; // number of computed eigen value close to sigma
+
+// Mesh
+border a0(t=0, 1) { x=5; y=1+2*t;}
+border a1(t=0, 1) { x=5-2*t; y=3;}
+border a2(t=0, 1) { x=3-2*t; y=3-2*t;}
+border a3(t=0, 1) { x=1-t; y=1;}
+border a4(t=0, 1) { x=0; y=1-t;}
+border a5(t=0, 1) { x=t; y=0;}
+border a6(t=0, 1) { x=1+4*t; y=t;}
+
+mesh Th=buildmesh(a0(20) + a1(20) + a2(20) + a3(20) + a4(20) + a5(20) + a6(20));
+
+// Fespace
+fespace Vh(Th, P1);
+Vh u,v;
+Vh u1, u2;
+~~~~
+The wave equation for the amplitude of a time periodic signal of frequency $\omega$, is
+$$
+\omega^2 u -\Delta u=0,~~\texttt{ in } \Omega,~\partial_n u|_{\Gamma_4}=g
+$$
+In variational form it is
+~~~c++
+solve sound(u, v)
+  =int2d(Th)(u*v*kc2 - dx(u)*dx(v) - dy(u)*dy(v))
+  - int1d(Th, a4)(g*v);
+
+plot(u, wait=1, ps="sound0.ps");
+~~~~
+To find the resonnances frequencies $\sigma$ one must solve an eigen value problem $A u = \sigma B u$ where $A$ is the matrix of the Laplace operator and $B$ is the mass matrix.
+~~~c++
+varf op(u1, u2)
+  = int2d(Th)(dx(u1)*dx(u2) + dy(u1)*dy(u2) - sigma* u1*u2);
+
+varf b([u1], [u2])
+  = int2d(Th)(u1*u2); // no boundary condition
+
+matrix OP = op(Vh, Vh, solver=Crout);  // crout solver because the matrix in not positive
+matrix B = b(Vh, Vh, solver=CG, eps=1e-20);
+
+real[int] ev(nev); // to store the nev eigenvalue
+Vh[int] eV(nev); // to store the nev eigenvector
+
+int k = EigenValue(OP, B, sym=true, sigma=sigma, value=ev, vector=eV,
+  tol=1e-10, maxit=0, ncv=0);
+cout << ev(0) << " 2 eigen values " << ev(1) << endl;
+v = eV[0];
+plot(v, wait=1, ps="eigen.eps");
+~~~
+Sound pressure lines
+![](pressure.png)
+
+One eigen mode
+![](eigen0.png)
+name: thermal
+category: thermodynamics
+layout: example
+---
+
+# Heat Equation
+The domain is a disk with 2 rectange inside. One is a hole the other one is a region with a different heat diffusion parameter.
+$$
+\kappa= 1 + 4{\bf 1}_{(x<-1)\cap(x>-2)\cap(y<3)\cap(y>-3)}.
+$$
+~~~c++
+border C0(t=0, 2*pi){x=5*cos(t); y=5*sin(t);}
+int C1 = 99, C2 = 98; // could be anything
+border C11(t=0, 1){x=1+t;  y=3;      label=C1;}
+border C12(t=0, 1){x=2;    y=3-6*t;  label=C1;}
+border C13(t=0, 1){x=2-t;  y=-3;     label=C1;}
+border C14(t=0, 1){x=1;    y=-3+6*t; label=C1;}
+
+border C21(t=0, 1){x=-2+t; y=3;      label=C2;}
+border C22(t=0, 1){x=-1;   y=3-6*t;  label=C2;}
+border C23(t=0, 1){x=-1-t; y=-3;     label=C2;}
+border C24(t=0, 1){x=-2;   y=-3+6*t; label=C2;}
+
+mesh Th=buildmesh(C0(50)
+  + C11(5) + C12(20) + C13(5) + C14(20)
+  + C21(-5) + C22(-20) + C23(-5) + C24(-20));
+plot(Th, wait=1);
+
+// Fespace
+fespace Vh(Th, P1);
+Vh u, v;
+Vh kappa = 1 + 4*(x<-1)*(x>-2)*(y<3)*(y>-3);
+~~~
+## The Mesh
+![](mesh.png)
+The heat equation is
+$$
+-\nabla\cdot(\kappa\nabla u)=0,~~u|_{C_0}=20,~~u|_{C_1}=100.
+$$
+~~~c++
+solve a(u, v)
+  = int2d(Th)(kappa*(dx(u)*dx(v) + dy(u)*dy(v)))
+  + on(C0, u=20)
+  + on(C1, u=100);
+plot(u, value=true, wait=1, fill=true);
+~~~
+## The temperature
+![](solution.png)
+name: Stokes
+category: fluid
+layout: example
+---
+
+# The Stokes system for creeping flow
+The system is set in 2 dimensions:
+$$
+-\Delta u + \nabla p =\vec f, \quad 
+ \nabla\cdot u = 0   \hbox{ in }\Omega ,~~
+ u _{|\Gamma}= \vec g
+ $$
+with $\Omega$ the  unit square, $\vec f=[0,0]^T$ and $\vec g={\bf 1}_{\Gamma_3}[1,0]^T$. 
+
+A possible variational formulation is
+$$∀(v,q),~~∫_Ω ∇u:∇v−∫_Ωp\nabla\cdot v=0,
+−∫_Ω\nabla\cdot u q−∫_Ωϵpq=0.
+$$
+The velocity is approximated with the $P^1+bubble$ element and the pressure by $P^1$ continuous functions.
+A small penalization parameter is added to the formuation to secure uniqueness.
+~~~c++
+int n = 3; // mesh quality
+mesh Th = square(10*n, 10*n);
+
+// Fespace
+fespace Uh(Th, P1b);
+Uh u, v;
+Uh uu, vv;
+fespace Ph(Th, P1);
+Ph p, pp;
+
+// Problem
+solve stokes([u, v, p], [uu, vv, pp])
+  = int2d(Th)(
+      dx(u)*dx(uu) + dy(u)*dy(uu)
+    + dx(v)*dx(vv) + dy(v)*dy(vv)
+    + dx(p)*uu + dy(p)*vv
+    + pp*(dx(u) + dy(v))
+    -1e-10*p*pp
+  )
+  + on(1, 2, 4, u=0, v=0)
+  + on(3, u=1, v=0)
+  ;
+
+// Plot
+plot([u,v],p,wait=1);
+~~~
+## Results
+isovalue lines of the pressure and vector display of the velocity.
+![](solution.png)
+name: stokes_periodic_composite
+category: fluid
+layout: example
+---
+
+# The Stokes system for creeping flow with periodic conditions
+
+This is a continuation of the previous example, but now there are
+- periodic boundary condition in x-direction 
+- dirichlet boundary condition in y-direction
+These are chosen from a manufacture solution
+$$
+u=\sin x\cos y,~v=-\cos x\sin y,~p=2\cos x\cos y
+$$
+~~~c++
+mesh Th=square(60,60,[2*pi*x,2*pi*y],flags=3);
+mesh ThU=trunc(Th,1,split=2);
+mesh ThP=Th;
+
+fespace UhPerio(ThU,[P1],periodic=[[2,y],[4,y]]);
+fespace Uh(ThU,[P1]);
+fespace Ph(Th,P1);
+
+fespace Vh=UhPerio*Uh*Ph; // definition of the composite FE space
+
+cout << "ndof = " << Vh.ndof << endl;
+
+UhPerio u1;
+Uh u2;
+Ph p;
+
+func g1 = sin(x)*cos(y);
+func g2 = -cos(x)*sin(y);
+
+func f1 = 0;
+func f2 = -4*cos(x)*sin(y);
+func fp = 2*cos(x)*cos(y);
+
+~~~~
+To illustrate a different method, here "solve" or "problem" is not used; the linear system is built with "varf"
+~~~c++
+macro grad(u) [dx(u),dy(u)]//
+macro Grad(u1,u2) [grad(u1), grad(u2)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+
+varf Stokes ( [u1,u2,p], [v1,v2,q] )
+= int2d(Th)( (Grad(u1,u2):Grad(v1,v2)) ) + int2d(Th)( - div(u1,u2)*q - div(v1,v2)*p ) + int2d(Th)( -1e-10*p*q )
++ int2d(Th) ( [f1,f2]'*[v1,v2] )
++ on(1,2,3,4,u2=g2) + on(1,3,u1=g1);
+
+matrix A = Stokes(Vh,Vh);
+real[int] b1 = Stokes(0,Vh);
+real[int] sol = A^(-1)*b1;
+~~~~
+To retrieve the velocity and the pressure from the compound vector sol, do
+~~~c++
+[u1[],u2[],p[]]=sol;
+
+plot( u1, cmm="u1" );
+plot( u2, cmm="u2");
+plot( p,  cmm="p" );
+~~~
+The rest of the script is devoted to the computation of the $L^2$ error 
+$$\|[u,v,p]-[u_e,v_e,p_e]\|.$$
+~~~c++
+fespace VhU(ThU,P1);
+fespace VhP(ThP,P1);
+
+VhU ue1=g1;
+VhU ue2=g2;
+VhP pe=fp;
+
+cout << " int2d(Th) (dx(fu1)+dy(fu2)) =" << int2d(Th)(dx(ue1)+dy(ue2)) << endl;
+
+cout << "error L2 (u) = " << int2d(Th)( (u1-ue1)^2 + (u2-ue2)^2 ) << endl;
+cout << "error L2 (p) = " << int2d(Th)( (p-pe)^2 ) << endl;
+cout << "error L2 relative (u) = " << int2d(Th)( (u1-ue1)^2 + (u2-ue2)^2 ) / int2d(Th)( ue1^2+ue2^2 ) << endl;
+cout << "error L2 relative (p) = " << int2d(Th)( (p-pe)^2 ) / int2d(Th)( pe^2 ) << endl;
+~~~
