@@ -27,8 +27,11 @@ border bei(t=-R/4, R/4) {x=L/2; y=t; label=0;}
 mesh Th = buildmesh(cc(-40) + ce(20) + beb(15) + beu(15) + beo(8) + bei(10));
 plot(Th);
 ~~~~
-The mesh
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/NSNewton/mesh.png)
+
+| The mesh   |
+| ---------- |
+| ![][_mesh] |
+
 To resolve the nonlinearity we use a linearization
 $$
 \begin{align*}
@@ -121,5 +124,10 @@ while(1) {
 }
 cout << " CPU "<< clock()<< " s " << endl;
 ~~~
-The solution
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/NSNewton/solution.png)
+| The solution   |
+| -------------- |
+| ![][_solution] |
+
+[_mesh]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/NSNewton/mesh.png
+
+[_solution]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/NSNewton/solution.png

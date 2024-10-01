@@ -48,5 +48,9 @@ solve a(u, v)
 // Plot
 plot(u, value=true, wait=1, fill=true);
 ~~~
-The solution:
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/heatex/solution.png)
+
+| The solution   |
+| -------------- |
+| ![][_solution] |
+
+[_solution]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/heatex/solution.png

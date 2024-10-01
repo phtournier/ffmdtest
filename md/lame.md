@@ -49,8 +49,11 @@ solve lame([u, v], [uu, vv])
 real coef=100;
 plot([u, v], wait=1, ps="lamevect.ps", coef=coef);
 ~~~~
-The displacement vectors
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/lame/solution.png)
+
+| The displacement vectors |
+| ------------------------ |
+| ![][_solution]           |
+
 A better way to display the result is to move the mesh by the displacement $[u,v]^T$.
 ~~~c++
 mesh th1 = movemesh(Th, [x+u*coef, y+v*coef]);
@@ -61,4 +64,11 @@ real dymin = v[].min;
 cout << "   displacement  max x = " << dxmin << " y = " << dymin << endl;
 cout << "   displacement (20,0) = " << u(20,0) << " " << v(20,0) << endl;
 ~~~~
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/lame/dispbeam.png)
+
+| The displaced beam |
+| ------------------ |
+| ![][_dispbeam]     |
+
+[_solution]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/lame/solution.png
+
+[_dispbeam]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/lame/dispbeam.png

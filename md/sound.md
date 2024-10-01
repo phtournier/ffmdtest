@@ -59,8 +59,15 @@ cout << ev(0) << " 2 eigen values " << ev(1) << endl;
 v = eV[0];
 plot(v, wait=1, ps="eigen.eps");
 ~~~
-Sound pressure lines
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/sound/pressure.png)
 
-One eigen mode
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/sound/eigen0.png)
+| Sound pressure lines |
+| -------------------- |
+| ![][_pressure]       |
+
+| One eigen mode |
+| -------------- |
+| ![][_eigen0]   |
+
+[_pressure]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/sound/pressure.png
+
+[_eigen0]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/sound/eigen0.png

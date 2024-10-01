@@ -31,8 +31,11 @@ fespace Vh(Th, P1);
 Vh u, v;
 Vh kappa = 1 + 4*(x<-1)*(x>-2)*(y<3)*(y>-3);
 ~~~
-## The Mesh
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/thermal/mesh.png)
+
+| The mesh   |
+| ---------- |
+| ![][_mesh] |
+
 The heat equation is
 $$
 -\nabla\cdot(\kappa\nabla u)=0,~~u|_{C_0}=20,~~u|_{C_1}=100.
@@ -44,5 +47,11 @@ solve a(u, v)
   + on(C1, u=100);
 plot(u, value=true, wait=1, fill=true);
 ~~~
-## The temperature
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/thermal/solution.png)
+
+| The temperature |
+| --------------- |
+| ![][_solution]  |
+
+[_mesh]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/thermal/mesh.png
+
+[_solution]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/thermal/solution.png

@@ -36,8 +36,11 @@ real nu = 0.0025; // Reynolds=200
 real dt = 0.2;
 real epsv = 1e-6, epsu = 1e-6, epsp = 1e-6;
 ~~~
-The mesh
-![](mesh.png)
+
+| The mesh   |
+| ---------- |
+| ![][_mesh] |
+
 The matrices dtMx and dtMy are used to project $[u,v]^T$ on the space of divergence free functions
 ~~~c++
 matrix dtM1x, dtM1y;
@@ -123,7 +126,17 @@ assert(abs(outflux) < 5e-3); // verification
 plot(p, wait=1, ps="NSprojP.ps");
 plot(u, wait=1, ps="NSprojU.ps");
 ~~~
-The u-component of the velocity and 
-![](u.png)
-the pressure
-![](p.png)
+
+| The u-component of the velocity |
+| ------------------------------- |
+| ![][_u]                         |
+
+| The pressure |
+| ------------ |
+| ![][_p]      |
+
+[_mesh]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/NSprojection/mesh.png
+
+[_u]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/NSprojection/u.png
+
+[_p]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/NSprojection/p.png

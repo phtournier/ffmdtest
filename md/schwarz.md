@@ -48,7 +48,15 @@ for (int i = 0; i < 4; i++) {
 
 plot(U, u, wait=1, cmm="Final solution");
 ~~~~
-The solution at iteration 1
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/schwarz/solone.png)
-The solution at iteration 4
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/schwarz/sol1four.png)
+
+| The solution at iteration 1 |
+| --------------------------- |
+| ![][_solone]                |
+
+| The solution at iteration 4 |
+| --------------------------- |
+| ![][_solfour]               |
+
+[_solone]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/schwarz/solone.png
+
+[_solfour]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/schwarz/solfour.png

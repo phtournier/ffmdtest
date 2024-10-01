@@ -46,6 +46,9 @@ vold = v + ue;
 // Plot
 plot(vold);
 ~~~
-## The temperature
 
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/thermic/solution.png)
+| The temperature   |
+| ----------------- |
+| ![][_solution]    |
+
+[_solution]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/thermic/solution.png

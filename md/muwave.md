@@ -26,8 +26,11 @@ border b3(t=5, 8) {x=a-e-f; y=l+g-l*(t-5)/3; label=3;}
 mesh Th = buildmesh(a0(10*n) + a1(10*n) + a2(10*n) + a3(10*n) + a4(10*n) + a5(10*n)
   + b0(5*n) + b1(10*n) + b2(5*n) + b3(10*n));
 ~~~
-The geometry
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/geometry.png)
+
+| The geometry   |
+| -------------- |
+| ![][_geometry] |
+
 The wave is solution of a PDE in the complex domain for which the variational formulation is
 $$
 \begin{align*}
@@ -64,8 +67,15 @@ plot(vr, wait=1, ps="rmuonde.ps", fill=true);
 plot(vi, wait=1, ps="imuonde.ps", fill=true);
 ~~~~
 Notice that the linear system is complex and could be singular (resonnance). 
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/realpart.png)
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/imaginepart.png)
+
+| Real part      |
+| -------------- |
+| ![][_realpart] |
+
+| Imaginary part    |
+| ----------------- |
+| ![][_imaginepart] |
+
 To compute the temperature in the meat we solve
 $$
 \begin{align*}
@@ -91,5 +101,15 @@ solve temperature(u, uu)
 
 plot(u, wait=1, ps="tempmuonde.ps", fill=true);
 ~~~
-The temperature
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/heat.png)
+
+| The temperature   |
+| ----------------- |
+| ![][_heat] |
+
+[_geometry]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/geometry.png
+
+[_realpart]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/realpart.png
+
+[_imaginepart]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/imaginepart.png
+
+[_heat]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/muwave/heat.png

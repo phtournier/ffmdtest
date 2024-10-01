@@ -60,5 +60,9 @@ plot( u2, cmm="u2" );
 plot( p,  cmm="p" );
 ~~~
 ## Results
-isovalue lines of the pressure.
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/stokes_composite/solution.png)
+
+| Isovalue lines of the pressure |
+| ------------------------------ |
+| ![][_solution]                 |
+
+[_solution]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/stokes_composite/solution.png

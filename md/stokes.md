@@ -46,5 +46,9 @@ solve stokes([u, v, p], [uu, vv, pp])
 plot([u,v],p,wait=1);
 ~~~
 ## Results
-isovalue lines of the pressure and vector display of the velocity.
-![](https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/stokes/solution.png)
+
+| Isovalue lines of the pressure and vector display of the velocity |
+| --------------                                                    |
+| ![][_solution]                                                    |
+
+[_solution]: https://raw.githubusercontent.com/phtournier/ffmdtest/refs/heads/main/md/figures/stokes/solution.png
