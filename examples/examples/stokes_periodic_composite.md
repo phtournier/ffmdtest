@@ -1,3 +1,4 @@
+---
 name: stokes_periodic_composite
 category: fluid
 layout: example

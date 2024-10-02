@@ -1,3 +1,4 @@
+---
 name: thermal
 category: thermodynamics
 layout: example

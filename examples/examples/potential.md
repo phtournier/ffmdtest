@@ -1,3 +1,4 @@
+---
 name: potential
 category:fluid mechanics
 layout: example

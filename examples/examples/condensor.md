@@ -1,3 +1,4 @@
+---
 name: condensator
 category: electrostatics
 layout: example

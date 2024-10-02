@@ -1,3 +1,4 @@
+---
 name: sound
 category: physics
 layout: example

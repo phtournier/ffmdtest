@@ -1,3 +1,4 @@
+---
 name: dist-projection
 category: Tools
 layout: example

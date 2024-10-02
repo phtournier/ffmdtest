@@ -1,3 +1,4 @@
+---
 name: NSNewton
 category: Fluid Mechanics
 layout: example

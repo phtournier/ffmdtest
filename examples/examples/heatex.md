@@ -1,3 +1,4 @@
+---
 name: heatex
 category: physics
 layout: example

@@ -1,3 +1,4 @@
+---
 name: Muwave
 category:Electromagnetism
 layout: example

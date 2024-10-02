@@ -1,3 +1,4 @@
+---
 name: optimcontrol
 category:optimization using BFGS
 layout: example

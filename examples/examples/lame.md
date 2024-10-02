@@ -1,3 +1,4 @@
+---
 name: Lamé
 category: Solid Mechanics
 layout: example

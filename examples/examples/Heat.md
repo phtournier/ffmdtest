@@ -1,3 +1,4 @@
+---
 name: heat
 category: thermodynamics
 layout: example

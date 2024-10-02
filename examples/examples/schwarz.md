@@ -1,3 +1,4 @@
+---
 name: schwarz
 category: mathematics
 layout: example

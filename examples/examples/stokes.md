@@ -1,3 +1,4 @@
+---
 name: Stokes
 category: fluid
 layout: example

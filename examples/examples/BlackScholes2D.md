@@ -1,3 +1,4 @@
+---
 name: BlackScholes2D
 category: finance
 layout: example
