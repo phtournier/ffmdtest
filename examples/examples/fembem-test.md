@@ -4,6 +4,16 @@ category: bem
 layout: example
 ---
 
+## FEM-BEM coupling for the Helmholtz equation
+
+### Definition of the geometry
+
+The parameters of the script are :
+- The frequency `k0` set by the command line parameter `-k0`
+- The number of points per wavelength `NpWL` set by `-npwl`
+- The preconditioner ?
+- the type of cavity set by `-obstacle`: it can be an `"elliptic_cavity"`, a `"rectangular_cavity"` or a `"curved_square"`
+
 ~~~freefem
 load "bem"
 load "msh3"
@@ -28,13 +38,18 @@ else if (inclination == "behind"){
 real lambda0 = 2*pi/k0; // wavelength
 int NpLength = NpWL * 1./lambda0;
 if (mpirank == 0) cout << "wavelength = " << lambda0 << endl;
+~~~
 
+Then we can build the finite element mesh `Th` of the volume for each geometric configuration, starting with the elliptic cavity. The two different boundaries are identified by their label: `labFemBem` corresponds to the FEM-BEM interface, while `labObstacle` is for the boundary of the cavity where we impose a Dirichlet boundary condition.
+
+`ThOut` is the exterior mesh where we want to reconstruct the solution outside of the domain.
+
+~~~freefem
 // ==================================================
 // ===============| Label definition |===============
 // ==================================================
 int labFemBem = 1;
 int labObstacle = 2;
-int labOther = 3;
 
 // ==================================================
 // =================| Volume domain |================
@@ -58,12 +73,12 @@ if (obstacleType == "elliptic_cavity"){
     real lseg = 0.6*sin(phi1)-0.5*sin(phi0);
 
     border bInterface(t = 0, 2*pi){x=Rfic*cos(t); y=Rfic*sin(t); label=labFemBem;} // Interface for FEM-BEM coupling
-    border bInterfaceOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t); label=labOther;}
+    border bInterfaceOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t);}
     // =======| Boundary of viewing area |=======
-    border b1(t=-L, L){x=t; y=-L; label=labOther;}
-    border b2(t=-L, L){x=L; y=t; label=labOther;}
-    border b3(t=-L, L){x=-t; y=L; label=labOther;}
-    border b4(t=-L, L){x=-L; y=-t; label=labOther;}
+    border b1(t=-L, L){x=t; y=-L;}
+    border b2(t=-L, L){x=L; y=t;}
+    border b3(t=-L, L){x=-t; y=L;}
+    border b4(t=-L, L){x=-L; y=-t;}
 
     Th = buildmesh(bphi0(-NpLength*lphi0)
                         + bd0(-NpLength*lseg)
@@ -92,13 +107,13 @@ else if (obstacleType == "rectangular_cavity"){
     border Obstacle8(t=0, h){x=-Lext/2; y=H/2-h+t; label=labObstacle;}
 
     border bInterface(t = 0, 2*pi){x=Rfic*cos(t); y=Rfic*sin(t); label=labFemBem;} // Interface for FEM-BEM coupling
-    border bInterfaceOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t); label=labOther;}
+    border bInterfaceOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t);}
     // =======| Boundary of viewing area |=======
-    border b1(t=-L, L){x=t; y=-L; label=labOther;}
-    border b2(t=-L, L){x=L; y=t; label=labOther;}
-    border b3(t=-L, L){x=-t; y=L; label=labOther;}
-    border b4(t=-L, L){x=-L; y=-t; label=labOther;}
-    border circleOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t); label=labOther;}
+    border b1(t=-L, L){x=t; y=-L;}
+    border b2(t=-L, L){x=L; y=t;}
+    border b3(t=-L, L){x=-t; y=L;}
+    border b4(t=-L, L){x=-L; y=-t;}
+    border circleOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t);}
 
     Th = buildmesh(Obstacle1(NpLength * Lext)
                     + Obstacle2(NpLength * H)
@@ -125,13 +140,13 @@ else if (obstacleType == "curved_square"){
     border BotLeftCorner(t = pi, 3*pi/2){x=-sqSize/4 + sqSize/4 * cos(t); y=-sqSize/4 + sqSize/4 * sin(t); label=labObstacle;}   
 
     border bInterface(t = 0, 2*pi){x=Rfic*cos(t); y=Rfic*sin(t); label=labFemBem;} // Interface for FEM-BEM coupling
-    border bInterfaceOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t); label=labOther;}
+    border bInterfaceOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t);}
     // =======| Boundary of viewing area |=======
-    border b1(t=-L, L){x=t; y=-L; label=labOther;}
-    border b2(t=-L, L){x=L; y=t; label=labOther;}
-    border b3(t=-L, L){x=-t; y=L; label=labOther;}
-    border b4(t=-L, L){x=-L; y=-t; label=labOther;}
-    border circleOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t); label=labOther;}
+    border b1(t=-L, L){x=t; y=-L;}
+    border b2(t=-L, L){x=L; y=t;}
+    border b3(t=-L, L){x=-t; y=L;}
+    border b4(t=-L, L){x=-L; y=-t;}
+    border circleOut(t = 0, 2*pi){x=(1+eps)*Rfic*cos(t); y=(1+eps)*Rfic*sin(t);}
 
     Th = buildmesh(LeftEdge(NpLength * sqSize/2)
                     + TopLeftCorner(-NpLength * pi/2 * sqSize/4)

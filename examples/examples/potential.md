@@ -3,7 +3,7 @@ name: potential
 category:fluid mechanics
 layout: example
 ---
-## Potential flow around an airfol with thermal effects.
+## Potential flow around an airfoil with thermal effects.
 
 Potential flow is
 $$
@@ -12,7 +12,7 @@ $$
 The flow is tangent to the airfoil, so $~~\vec u\cdot n=0,~i.e.~~\psi=a$ constant.
 At infinity the flow is given: $\phi=y\cos\alpha-x\sin\alpha$ where $\alpha$ is the angle of incidence.  
 The airfoil is a NACA0012 given as a function $x\to \pm y(x)$.
-~~~c++
+~~~freefem
 real S = 99;
 
 border C(t=0, 2*pi){x=3*cos(t); y=3*sin(t);} // Label 1,2 
@@ -39,7 +39,7 @@ Let $\Omega$ be a the bounded open set of $R^2$ approximating $\infty$ by a circ
 $$
 \int_\Omega\nabla\psi\nabla\hat\psi =0~~\forall \hat\psi\in  H^1_0(\Omega);~~\psi-\psi_\Gamma^i\in H^1_0(\Omega).
 $$
-~~~c++
+~~~freefem
 Vh psi, w;
 real cost = cos(5.*pi/180.), sint=sin(5.*pi/180.);// incidence 5 degres
 // Problem
@@ -51,7 +51,7 @@ solve potential(psi, w)
 plot(psi, wait=1);
 ~~~
 For the temperature equation we work with a different mesh on because the temperature varies also inside the airfoil.
-~~~c++
+~~~freefem
 border D(t=0, 2.){x=0.5+t*cost; y=+t*sint;}
 mesh Sh = buildmesh(C(25) + Splus(-90) + Sminus(-90) + D(200));
 int steel = Sh(0.5, 0).region, air = Sh(-1, 0).region;
@@ -65,13 +65,13 @@ W0 u1 = dy(psi)*(region == air), u2 = -dx(psi)*(region == air);
 Wh v = 120*(region == steel), vold;
 // pul label 10 on inflow boundary to inforce the temperature.
 Sh = change(Sh,flabel = (label == C &&  [u1,u2]'*N<0) ? 10 : label);
-~~~~
+~~~
 The time dependent heat equation is solved by an implicit Euler time scheme.
 $$
 \frac1{dt} v -\nabla\cdot(k\nabla v) + a(u_1\partial_x v + u_2\partial_y v) =\frac1{dt} v_{old}
 $$
 where $[u_1,u_2]^T=\nabla\times\psi$.
-~~~c++
+~~~freefem
 int i;
 real dt = 0.005, nbT = 50;
 problem thermic(v, vv, init=i, solver=LU)

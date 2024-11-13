@@ -23,7 +23,7 @@ Z=\{z: ~ z(x,y)=1+z_0{\bf 1}_{D_0}+z_0{\bf 1}_{D_1}+z_0{\bf 1}_{D_2}\}
 $$
 where ${\bf 1}_{D_i}$ is the characteristic function of $D_i$.
 In the follwoing example, $w=x^3-y^3$.
-~~~c++
+~~~freefem
 border aa(t=0, 2*pi) {x = 5*cos(t); y = 5*sin(t);}
 border bb(t=0, 2*pi) {x = cos(t); y = sin(t);}
 border cc(t=0, 2*pi) {x = -3+cos(t); y = sin(t);}
@@ -54,7 +54,7 @@ plot(u, wait=1);
 The test will also be our target
 ![][_test]
 BFGS requires $J$ and $J'_z$ to be defined as C-functions
-~~~c++
+~~~freefem
 ud = u;
 ofstream f("J.txt");
 
@@ -89,14 +89,14 @@ func real[int] DJ(real[int] &Z) {
 }
 ~~~
 We are now ready to call BFGS with initial value for the optimization parameter $Z[i]=1$, $i=0,1,2$.
-~~~c++
+~~~freefem
 real[int] Z(3);
 for(int j = 0; j < z.n; j++) Z[j] = 1;
 
 BFGS(J, DJ, Z, eps=1.e-6, nbiter=15, nbiterline=20);
 ~~~
 The results are printed and plotted:
-~~~c++
+~~~freefem
 cout << "BFGS: J(z) = " << J(Z) << endl;
 for(int j = 0; j < z.n; j++) cout << z[j] << endl;
 plot(ud, value=1, ps="u.ps");

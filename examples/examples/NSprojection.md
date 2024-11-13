@@ -1,11 +1,12 @@
+---
 name: NSprojection
 category: Fluid Mechanics
 layout: example
 ---
 
-## Time dependent imcompressible Navier Stokes Equation solved with Newton's method 
+## Time dependent incompressible Navier-Stokes Equations solved with Newton's method 
 
-The navier-Stokes equations are solved for a flow over a backward facing step.
+The Navier-Stokes equations are solved for a flow over a backward facing step.
 The time independent Navier-Stokes equations for an incompressible fluid are
 $$
 \frac{\partial u}{\partial t}-\nu\Delta u +u\cdot\nabla u -\nabla p =0,~~~\nabla\cdot u=0~~~in ~ \Omega
@@ -13,7 +14,7 @@ $$
 
 The velocity is specified on the left vertical side of the pipe (inlet) and free on the vertical side on the right (outlet). There is a noslip condition on the lateral walls.
 The geometry is as follows. Note the trick $t^{1.2}$ to refine the mesh near the corner of the step.
-~~~c++
+~~~freefem
 verbosity=0;
 int n = 1;
 
@@ -42,7 +43,7 @@ real epsv = 1e-6, epsu = 1e-6, epsp = 1e-6;
 | ![][_mesh] |
 
 The matrices dtMx and dtMy are used to project $[u,v]^T$ on the space of divergence free functions
-~~~c++
+~~~freefem
 matrix dtM1x, dtM1y;
 
 macro  BuildMat()
@@ -66,7 +67,7 @@ In the follwing time loop, ${\bf u}=[u,v]^T$ are computed at every time steps by
 $$
 \partial_t{\bf u}+{\bf u}\cdot\nabla{\bf u}|_{x,t}\approx \frac1{\delta t}[{\bf u}(x,t)-{\bf u}(x-{\bf u}(x,t-\delta t)\delta t,t-\delta t)]
 $$
-~~~c++
+~~~freefem
 real err = 1, outflux = 1;
 for(int n = 0; n < 200; n++) {
   Vh uold = u, vold = v, pold = p;
@@ -102,21 +103,21 @@ for(int n = 0; n < 200; n++) {
   epsp = -abs(epsp);
 ~~~
 And then ${\bf u}$ is projected with $q$ by $M$ , i.e. ${\bf u}+M(\nabla q)\delta t$ is divergence free.
-~~~c++
+~~~freefem
 p = pold-q;
 u[] += dtM1x*q[];
 v[] += dtM1y*q[];
 ~~~
 For better precosion the mesh is adapted to the flow
-~~~c++
+~~~freefem
 if(n%50 == 49) {
     Th = adaptmesh(Th, [u, v], q, err=0.06, nbvx=100000);
     plot(Th, wait=true);
     BuildMat // rebuild mat.
 }
-~~~~
+~~~
 The stopping criteria to exit the loop:
-~~~c++
+~~~freefem
 err = sqrt(int2d(Th)(square(u - uold) + square(v - vold))/Th.area);
   outflux = int1d(Th)([u, v]'*[N.x, N.y]) ;
   cout << " iter " << n << " Err L2 = " << err << " - Outflow = " << outflux << endl;

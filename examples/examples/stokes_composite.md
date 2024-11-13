@@ -17,7 +17,7 @@ A possible variational formulation is
 $$∀(v,q),~~∫_Ω ∇u:∇v−∫_Ωp\nabla\cdot v=∫_Ωf\cdot v,
 −∫_Ω\nabla\cdot u q−∫_Ωϵpq=0.
 $$
-~~~c++
+~~~freefem
 macro grad(u) [dx(u),dy(u)]//
 macro Grad(u1,u2) [ grad(u1), grad(u2)]//
 macro div(u1,u2) (dx(u1)+dy(u2))//
@@ -46,7 +46,7 @@ Using different meshes for the velocity and pressure is also not necessary but i
 https://doc.freefem.org/documentation/composite.html
 
 The solver is standard.  The penalization of $pq$ is needed to avoid the singularity of the system because in Stokes' equations, pressure is defined up to a constant.
-~~~c++
+~~~freefem
 Uh [u1,u2],[v1,v2];
 Ph p,q;
 

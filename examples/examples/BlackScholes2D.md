@@ -23,13 +23,13 @@ The 2 underlying asset (e.g. Renault and Peugeot shares) are valued at $x$ and $
 
 The interest rate is $r$, the volatilities are $\sigma_1,\sigma_2$, the correlation is $\rho$. $K$ is the strike price.
 For example,
-~~~c++
+```freefem
 real sigma1 = 0.3;
 real sigma2 = 0.3;
 real rho = 0.3;
 real r = 0.05;
 real K = 40;
-~~~
+```
 Notice that the problem is backward in time because final conditions are given and the signs of the differential operator is positive.  We will change $t$ to $T-t$ to work forward in tome.
 
 As usual we must work on the variational formulation: find $u\in V:=  L^2(0,T,H^1(\Omega))$ such that 
@@ -42,7 +42,7 @@ u ( x , y , 0) = ( K − \max ( x , y ) )^+
 \end{aligned}
 $$
 Boundary conditions  are not needed at $x=0$ and $y=0$ because the differential operator degenerates. At infinity there are implicit Neumann conditions.  In practice the problem must be localized, so $R^+\times R^+$ is replaced by $(0,L)\times(0,LL)$. Hence the mesh and the FEM space are  built as follows:
-~~~c++
+```freefem
 int m = 30;
 int L = 80;
 int LL = 80;
@@ -52,7 +52,7 @@ mesh th = square(m, m, [L*x, LL*y]);
 fespace Vh(th, P1);
 Vh u = max(K - max(x, y), 0.);
 Vh xveloc, yveloc, v, uold;
-~~~~
+```
 An implicit in time Euler scheme is used, but in addition for stability and avoiding upwinding, we use the method of characteristics:
 $$
 \begin{aligned}&
@@ -67,7 +67,7 @@ V=-y r + y\sigma_2^2 + \frac12 y\rho\sigma_1\sigma_2.
 \end{aligned}
 $$
 So the implementation is 
-~~~c++
+```freefem
 real dt = 0.01;
 for (int n = 0; n*dt <= 1.0; n++) {
     xveloc = -x*r + x*sigma1^2 + x*rho*sigma1*sigma2/2;
@@ -89,15 +89,18 @@ for (int n = 0; n*dt <= 1.0; n++) {
         + on(2,3,u=0)
         ;
 }
-~~~~
+```
 Notice the parameters in solve to indicate that the factorized matrix can be reused.  With the default solver of FreeFem this is no longer much of an optimization.
 Visualization is as usual
-~~~c++
+```freefem
 plot(u, fill=true, wait=true, value=true);
-~~~
-One could add mesh adaptiion by inserting above the line 
+```
+One could add mesh adaptiion by inserting above the line
+```freefem 
 // update
+```
 the following
+```freefem
    // Mesh adaptation
        j = j + 1;
        if (j > 20) {
@@ -108,6 +111,7 @@ the following
          u = u;
          plot(th, wait=true);
     }
+```
 
 ## Results
 | The price of the Put |

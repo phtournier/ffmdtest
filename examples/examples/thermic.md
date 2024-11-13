@@ -7,14 +7,14 @@ layout: example
 # The time dependent nonlinear heat equation
 
 The time dependent heat equation  with a discontinuous thermal diffusion and nonlinear dissipation is integrated in a rectangle:
-~~~c++
+~~~freefem
 mesh Th = square(30, 5, [6*x, y]);
 ~~~
 $$
 \partial_t u - \nabla\cdot(k\nabla u)=0, ~~u|_{\Gamma_1}=u_\Gamma,~~k\frac{\partial u}{\partial n}|_{\Gamma_2}+b(u)(u-u_e)=0,~~u_{t=0}=u_0.
 $$
 In this example $k=1.8~{\bf 1}_{y<0.5}+0.2$ where ${\bf 1}_x$ is the Heaviside function.  The time varies from 0 to 5. Finally $u_e=20$.  The function $b$ corresponds to the linearization of a $T^4$ law.
-~~~c++
+~~~freefem
 func u0 = 10+90*x/6;
 func k = 1.8*(y<0.5) + 0.2;
 real ue = 25, alpha = 0.25, T = 5, dt = 0.1;
@@ -34,7 +34,7 @@ problem thermradia(v, w)
   + on(2, 4, v=u0-ue);
 ~~~
 An implicit Euler scheme is used to integrate the equation in time with time step 0.1. A loop is used for the nonlinearity.
-~~~c++
+~~~freefem
 for(real t = 0; t < T; t+=dt) {
   vold = v;
   for (int m = 0; m < 5; m++) {

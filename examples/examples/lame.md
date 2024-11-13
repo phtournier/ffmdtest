@@ -27,7 +27,7 @@ $$
 $$
 
 
-~~~c++
+~~~freefem
 real E = 21e5, nu = 0.28;
 real f = -1;
 real mu = E/(2*(1 + nu));
@@ -49,14 +49,14 @@ solve lame([u, v], [uu, vv])
 
 real coef=100;
 plot([u, v], wait=1, ps="lamevect.ps", coef=coef);
-~~~~
+~~~
 
 | The displacement vectors |
 | ------------------------ |
 | ![][_solution]           |
 
 A better way to display the result is to move the mesh by the displacement $[u,v]^T$.
-~~~c++
+~~~freefem
 mesh th1 = movemesh(Th, [x+u*coef, y+v*coef]);
 plot(th1, wait=1, ps="lamedeform.eps");
 
@@ -64,7 +64,7 @@ real dxmin = u[].min;
 real dymin = v[].min;
 cout << "   displacement  max x = " << dxmin << " y = " << dymin << endl;
 cout << "   displacement (20,0) = " << u(20,0) << " " << v(20,0) << endl;
-~~~~
+~~~
 
 | The displaced beam |
 | ------------------ |

@@ -12,7 +12,7 @@ $$
 In this example the domain $\Omega$ is a circle minus 2 rectangles on which boundary the temperature is imposed.
 The thermal diffusion is $\kappa=1+4~{\bf 1}_{x\in(-2,-1)\times(-3,3)}$ where ${\bf 1}_x$ is the Heaviside function. Finally $u=20$ on the outer circle and 100 one the right rectangle. The left rectangle is there only to define $\kappa$. It corresponds to the following FreeFem script
 
-~~~c++
+~~~freefem
 int C1 = 99, C2 = 98; // could be anything
 
 // Mesh

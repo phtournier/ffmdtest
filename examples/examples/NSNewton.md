@@ -4,16 +4,16 @@ category: Fluid Mechanics
 layout: example
 ---
 
-## Stationnary imcompressible Navier Stokes Equation solved with Newton's method 
+## Stationary incompressible Navier-Stokes Equation solved with Newton's method 
 The time independent Navier-Stokes equations for an incompressible fluid are
 $$
 -\nu\Delta u +u\cdot\nabla u -\nabla p =0,~~~\nabla\cdot u=0~~~in ~ \Omega
 $$
 We are interested by the flow around a cylinder in an infinite fluid (approximated by a rectangle with a round side on the left and a circle in the center).
-Dirichlet boundary conditons aare imposed on boundaries 2 (the cylinder)  and 1, the left  (inflow) and lateral sides (tangent flow)  of the rectangle.
+Dirichlet boundary conditons are imposed on boundaries 2 (the cylinder)  and 1, the left  (inflow) and lateral sides (tangent flow)  of the rectangle.
 
-Here $\Omega$ is a a cylinder.
-~~~c++
+Here $\Omega$ is a cylinder.
+~~~freefem
 verbosity=0; //To minimize messages at execution
 
 real R = 5, L = 15;
@@ -27,7 +27,7 @@ border beo(t=-R, R) {x=L; y=t; label=0;}
 border bei(t=-R/4, R/4) {x=L/2; y=t; label=0;}
 mesh Th = buildmesh(cc(-40) + ce(20) + beb(15) + beu(15) + beo(8) + bei(10));
 plot(Th);
-~~~~
+~~~
 
 | The mesh   |
 | ---------- |
@@ -48,7 +48,7 @@ $$\begin{align*}
 \end{align*}
 $$
 For stability the iterations are started with a large $\nu$ and then $\nu$ is decreased up to its desired value.
-~~~c++
+~~~freefem
 real nu = 1./50, nufinal = 1/200., cnu = 0.5;
 macro Grad(u1, u2) [dx(u1), dy(u1), dx(u2), dy(u2)]//
 macro UgradV(u1, u2, v1, v2) [[u1, u2]'*[dx(v1), dy(v1)], [u1, u2]'*[dx(v2), dy(v2)] ]//

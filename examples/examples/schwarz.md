@@ -6,7 +6,7 @@ layout: example
 
 ## Domain Decomposition Method: solution by Schwarz iterations
 The Laplace equation is solved in a domain which is the union of a circle and a rectangle.  
-~~~c++
+~~~freefem
 real n = 4; // Mesh quality
 
 // Mesh
@@ -27,9 +27,9 @@ Vh v, u=0;
 mesh TH = buildmesh(e(5*n) + e1(25*n));
 fespace VH(TH,P1);
 VH V, U=0;
-~~~~
+~~~
 The Schwarz algorithm solves iteratively and alternatively on the circle and the rectangle. The trace on the rectangle of the solution on the circle becomes the boundary conditon for thee problem on the rectangle and ssimilarly for the circle.
-~~~c++
+~~~freefem
 for (int i = 0; i < 4; i++) {
   plot(U, u, wait=1, cmm="Iteration "+i);
   // Solve on Omega2
@@ -48,7 +48,7 @@ for (int i = 0; i < 4; i++) {
 }
 
 plot(U, u, wait=1, cmm="Final solution");
-~~~~
+~~~
 
 | The solution at iteration 1 |
 | --------------------------- |

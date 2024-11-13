@@ -19,7 +19,7 @@ $$∀(v,q),~~∫_Ω ∇u:∇v−∫_Ωp\nabla\cdot v=0,
 $$
 The velocity is approximated with the $P^1+bubble$ element and the pressure by $P^1$ continuous functions.
 A small penalization parameter is added to the formuation to secure uniqueness.
-~~~c++
+~~~freefem
 int n = 3; // mesh quality
 mesh Th = square(10*n, 10*n);
 

@@ -12,7 +12,7 @@ https://doc.freefem.org/tutorials/heatExchanger.html#heat-exchanger
 It is quite easy to compute the electrostatic potential $u$ between 2 plates, one at potential -1 and the other at potential 1.  The plates $C_1,C_3$ are inside a round container $C_2$.
 
 The geometry is a bit painful to describe with the keyword border.
-~~~c++
+~~~freefem
 int C1 = 1; // labels to identify the 2 plates C1,C3 and the containner C2
 int C2 = 2; // could be any number
 int C3 = 3;
@@ -33,11 +33,11 @@ mesh Th=buildmesh(C0(50)
     +C11(5)+C12(20)+C13(5)+C14(20)
     +C21(5)+C22(20)+C23(5)+C24(-20));
 plot(Th, wait=true);
-~~~~
+~~~
 
 ![][_mesh]
 
-The electrosptatic potential equation in absence of volumic chaarges is
+The electrostatic potential equation in absence of volumic charges is
 $$
 \Delta u =1,\quad u|_{C_1}=-1,\quad u|_{C_2}=0,\quad u|_{C_3}=1,
 $$
@@ -45,7 +45,7 @@ The variational formulation is: find $u\in H^1(\Omega)$ with $u|_{C_i}=i-2, i=1,
 $$
 \int_\Omega\nabla u\cdot\nabla v=0\quad \forall v\in H^1_0(\Omega).
 $$
-~~~c++
+~~~freefem
 fespace Vh(Th, P1);
 Vh u, v;
 

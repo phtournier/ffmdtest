@@ -5,11 +5,11 @@ layout: example
 ---
 
 # Heat Equation
-The domain is a disk with 2 rectange inside. One is a hole the other one is a region with a different heat diffusion parameter.
+The domain is a disk with 2 rectangles inside. One is a hole the other one is a region with a different heat diffusion parameter.
 $$
 \kappa= 1 + 4{\bf 1}_{(x<-1)\cap(x>-2)\cap(y<3)\cap(y>-3)}.
 $$
-~~~c++
+~~~freefem
 border C0(t=0, 2*pi){x=5*cos(t); y=5*sin(t);}
 int C1 = 99, C2 = 98; // could be anything
 border C11(t=0, 1){x=1+t;  y=3;      label=C1;}
@@ -41,7 +41,7 @@ The heat equation is
 $$
 -\nabla\cdot(\kappa\nabla u)=0,~~u|_{C_0}=20,~~u|_{C_1}=100.
 $$
-~~~c++
+~~~freefem
 solve a(u, v)
   = int2d(Th)(kappa*(dx(u)*dx(v) + dy(u)*dy(v)))
   + on(C0, u=20)

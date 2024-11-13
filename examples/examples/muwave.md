@@ -7,7 +7,7 @@ layout: example
 ## Compute the stationary electromagnetic wave for a microwave oven
 
 The domain is a square box with a rectangle inside to simulate the object (called meast below) which is heated by the wave.  The electromagnetic source is from the top boundary
-~~~c++
+~~~freefem
 int n = 2;
 real a = 20, b = 20, c = 15, d = 8, e = 2, l = 12, f = 2, g = 2;
 
@@ -46,7 +46,7 @@ $$
     \end{align*}
 $$
 and where $R$ takes a different value in the meat. This is implemented as follows
-~~~c++
+~~~freefem
 real meat = Th(a-f-e/2, g+l/2).region, 
      air= Th(0.01, 0.01).region;
 plot(Th, wait=1);
@@ -66,7 +66,7 @@ solve muwave(v, w)
 Vh vr = real(v), vi = imag(v);
 plot(vr, wait=1, ps="rmuonde.ps", fill=true);
 plot(vi, wait=1, ps="imuonde.ps", fill=true);
-~~~~
+~~~
 Notice that the linear system is complex and could be singular (resonnance). 
 
 | Real part      |
@@ -88,7 +88,7 @@ $$
     v|_{\Gamma_1\cup\Gamma_2}=0,
     \end{align*}
 $$
-~~~c++
+~~~freefem
 fespace Uh(Th,P1);
 Uh u, uu, ff=1e5*(vr^2 + vi^2)*R;
 
